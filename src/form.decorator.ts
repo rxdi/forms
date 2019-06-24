@@ -1,9 +1,5 @@
 import { UpdatingElement } from '@rxdi/lit-html';
 import { FormOptions } from './form.tokens';
-import {
-  isElementPresentOnShadowRoot,
-  updateValueAndValidity
-} from './form.helpers';
 import { noop } from 'rxjs';
 import { FormGroup } from './form.group';
 
@@ -13,32 +9,15 @@ export function Form(
   } as any
 ) {
   return function(clazz: Object, name: string | number | symbol) {
+    if (!options.name) {
+      throw new Error('Missing form name');
+    }
     const formGroup = new FormGroup();
     const Destroy = clazz.constructor.prototype.OnDestroy || noop;
     const Update = clazz.constructor.prototype.OnUpdateFirst || noop;
     clazz.constructor.prototype.OnUpdateFirst = function() {
-      if (!options.name) {
-        throw new Error('Missing form name');
-      }
-      const form = this.shadowRoot.querySelector(
-        `form[name="${options.name}"]`
-      );
-      if (!form) {
-        throw new Error(`Form element not present inside ${this}`);
-      }
-      formGroup.setFormElement(form);
-      const inputs = [...form.querySelectorAll('input').values()]
-        .filter(el => isElementPresentOnShadowRoot(el, formGroup))
-        .filter(el => !!el.name)
-        .map((el: HTMLInputElement) => {
-          el[`on${options.strategy}`] = updateValueAndValidity(
-            el[`on${options.strategy}`] || function() {},
-            formGroup,
-            this
-          );
-          return el;
-        });
-        formGroup.setFormInputs(inputs);
+      formGroup.setFormElement(formGroup.querySelectForm(this.shadowRoot, options));
+      formGroup.setFormInputs(formGroup.querySelectorAllInputs(this, options));
       return Update.call(this);
     };
     clazz.constructor.prototype.OnDestroy = function() {
@@ -62,18 +41,18 @@ export function Form(
             }
             if (
               value[0].constructor === String ||
-              value[0].constructor === Number
+              value[0].constructor === Number ||
+              value[0].constructor === Boolean
             ) {
-              (form.value[v] as any) = value[0] as string | number;
+              (form.value[v] as any) = value[0];
             } else {
               throw new Error(
-                `Input value must be of type 'string' or 'number'`
+                `Input value must be of type 'string', 'boolean' or 'number'`
               );
             }
           }
         });
         formGroup.value = form.value;
-
       },
       configurable: true,
       enumerable: true

@@ -1,32 +1,20 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const form_helpers_1 = require("./form.helpers");
 const rxjs_1 = require("rxjs");
 const form_group_1 = require("./form.group");
 function Form(options = {
     strategy: 'none'
 }) {
     return function (clazz, name) {
+        if (!options.name) {
+            throw new Error('Missing form name');
+        }
         const formGroup = new form_group_1.FormGroup();
         const Destroy = clazz.constructor.prototype.OnDestroy || rxjs_1.noop;
         const Update = clazz.constructor.prototype.OnUpdateFirst || rxjs_1.noop;
         clazz.constructor.prototype.OnUpdateFirst = function () {
-            if (!options.name) {
-                throw new Error('Missing form name');
-            }
-            const form = this.shadowRoot.querySelector(`form[name="${options.name}"]`);
-            if (!form) {
-                throw new Error(`Form element not present inside ${this}`);
-            }
-            formGroup.setFormElement(form);
-            const inputs = [...form.querySelectorAll('input').values()]
-                .filter(el => form_helpers_1.isElementPresentOnShadowRoot(el, formGroup))
-                .filter(el => !!el.name)
-                .map((el) => {
-                el[`on${options.strategy}`] = form_helpers_1.updateValueAndValidity(el[`on${options.strategy}`] || function () { }, formGroup, this);
-                return el;
-            });
-            formGroup.setFormInputs(inputs);
+            formGroup.setFormElement(formGroup.querySelectForm(this.shadowRoot, options));
+            formGroup.setFormInputs(formGroup.querySelectorAllInputs(this, options));
             return Update.call(this);
         };
         clazz.constructor.prototype.OnDestroy = function () {
@@ -49,11 +37,12 @@ function Form(options = {
                             });
                         }
                         if (value[0].constructor === String ||
-                            value[0].constructor === Number) {
+                            value[0].constructor === Number ||
+                            value[0].constructor === Boolean) {
                             form.value[v] = value[0];
                         }
                         else {
-                            throw new Error(`Input value must be of type 'string' or 'number'`);
+                            throw new Error(`Input value must be of type 'string', 'boolean' or 'number'`);
                         }
                     }
                 });

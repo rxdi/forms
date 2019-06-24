@@ -158,3 +158,65 @@ export class LoginComponent extends BaseComponent {
 }
 
 ```
+
+
+
+#### Group multiple inputs with single check intaraction
+
+> By default all inputs with same attribute `name` are binded together,
+
+```typescript
+  @Form({
+    strategy: 'change',
+    name: 'my-form'
+  })
+  private form = new FormGroup({
+    condition: ''
+  });
+```
+
+```html
+<label>
+  <input
+    name="condition"
+    type="checkbox"
+    value='none'
+  />
+  None
+</label>
+
+<label>
+  <input
+    name="condition"
+    type="checkbox"
+    value='checked'
+  />
+  Checked
+</label>
+
+<label>
+  <input
+    name="condition"
+    type="checkbox"
+    value='not-checked'
+  />
+  Not checked
+</label>
+```
+
+
+#### Group multiple inputs with multi check intaraction
+
+
+> To remove binding we can set `multi: false` when defining our form
+
+```typescript
+  @Form({
+    strategy: 'change',
+    name: 'my-form',
+    multi: false
+  })
+  private form = new FormGroup({
+    condition: ''
+  });
+```

@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const rxjs_1 = require("rxjs");
 class FormGroup {
-    constructor(value) {
+    constructor(value, errors) {
         this.validators = new Map();
         this.errors = {};
         this._valueChanges = new rxjs_1.BehaviorSubject({});
@@ -12,6 +12,67 @@ class FormGroup {
     }
     get valueChanges() {
         return this._valueChanges.asObservable();
+    }
+    updateValueAndValidity(method, parentElement, multi = true) {
+        const self = this;
+        return function (event) {
+            let value = this.value;
+            const hasMultipleBindings = [
+                ...self
+                    .getFormElement()
+                    .querySelectorAll(`input[name="${this.name}"]`).values()
+            ].length;
+            if (hasMultipleBindings === 1 &&
+                (this.type === 'checkbox' || this.type === 'radio')) {
+                value = String(this.checked);
+            }
+            if (multi && hasMultipleBindings > 1) {
+                [
+                    ...self
+                        .getFormElement()
+                        .querySelectorAll('input:checked').values()
+                ].forEach(el => (el.checked = false));
+                this.checked = true;
+            }
+            const form = self.getFormElement();
+            const errors = self.validate(parentElement, this);
+            if (errors.length) {
+                form.invalid = true;
+            }
+            else {
+                self.errors[this.name] = {};
+                form.invalid = false;
+                self.setValue(this.name, value);
+            }
+            parentElement.requestUpdate();
+            return method.call(parentElement, event);
+        };
+    }
+    querySelectForm(shadowRoot, options) {
+        const form = shadowRoot.querySelector(`form[name="${options.name}"]`);
+        if (!form) {
+            throw new Error(`Form element not present inside ${this}`);
+        }
+        return form;
+    }
+    querySelectorAllInputs(self, options) {
+        return [
+            ...this.form.querySelectorAll('input').values()
+        ]
+            .filter(el => this.isInputPresentOnStage(el))
+            .filter(el => !!el.name)
+            .map((el) => {
+            el.ondragleave;
+            el[`on${options.strategy}`] = this.updateValueAndValidity(el[`on${options.strategy}`] || function () { }, self, options.multi);
+            return el;
+        });
+    }
+    isInputPresentOnStage(input) {
+        const isInputPresent = Object.keys(this.value).filter(v => v === input.name);
+        if (!isInputPresent.length) {
+            throw new Error(`Missing input element with name ${input.name} for form ${this.getFormElement().name}`);
+        }
+        return isInputPresent.length;
     }
     validate(element, input) {
         const validators = this.validators.get(input.name);

@@ -1,7 +1,8 @@
-import { Observable } from 'rxjs';
-import { FormInputOptions } from './form.tokens';
+import { FormInputOptions, FormOptions } from './form.tokens';
 import { LitElement } from '@rxdi/lit-html';
-export declare class FormGroup<T = FormInputOptions> {
+export declare class FormGroup<T = FormInputOptions, E = {
+    [key: string]: any;
+}> {
     validators: Map<string, Function[]>;
     valid: boolean;
     invalid: boolean;
@@ -10,12 +11,18 @@ export declare class FormGroup<T = FormInputOptions> {
     private form;
     private errorMap;
     private inputs;
-    constructor(value?: T);
-    readonly valueChanges: Observable<T>;
+    constructor(value?: T, errors?: E);
+    readonly valueChanges: import("rxjs").Observable<T>;
+    updateValueAndValidity(method: Function, parentElement: LitElement, multi?: boolean): (this: HTMLInputElement, event: {
+        target: HTMLInputElement;
+    }) => any;
+    querySelectForm(shadowRoot: HTMLElement, options: FormOptions): HTMLFormElement;
+    querySelectorAllInputs(self: LitElement, options: FormOptions): HTMLInputElement[];
+    isInputPresentOnStage(input: HTMLInputElement): number;
     validate(element: LitElement, input: HTMLInputElement): any[];
     get(name: keyof T): HTMLInputElement;
-    getError(inputName: string, errorKey: string): any;
-    hasError(inputName: string, errorKey: string): boolean;
+    getError(inputName: keyof T, errorKey: keyof E): any;
+    hasError(inputName: keyof T, errorKey: keyof E): boolean;
     reset(): void;
     value: T;
     unsubscribe(): void;
