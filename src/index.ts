@@ -1,10 +1,12 @@
 import { BehaviorSubject, Observable } from 'rxjs';
-import { UpdatingElement } from '@rxdi/lit-html';
+import { UpdatingElement, LitElement } from '@rxdi/lit-html';
 
 export class FormGroupController<T = { [key: string]: string }> {
   private readonly _valueChanges: BehaviorSubject<T> = new BehaviorSubject(
     {} as any
   );
+
+  private form: HTMLFormElement;
 
   get valueChanges() {
     return this._valueChanges.asObservable();
@@ -23,7 +25,7 @@ export class FormGroupController<T = { [key: string]: string }> {
   }
 
   getValue(name: string): keyof T {
-    return this.valueChanges[name];
+    return this.values[name];
   }
 
   setValue(name: string, value: any) {
@@ -31,6 +33,14 @@ export class FormGroupController<T = { [key: string]: string }> {
     values[name] = value;
     this.values = values;
     return values;
+  }
+
+  setFormElement(form: HTMLFormElement) {
+    this.form = form;
+  }
+
+  getFormElement() {
+    return this.form;
   }
 }
 
@@ -40,16 +50,85 @@ export interface FormOptions {
   name: string;
   strategy?: FormStrategies;
 }
+export const updateValueAndValidity = function(
+  method: Function,
+  controller: FormGroupController,
+  element: LitElement
+) {
+  return function(event: { target: HTMLInputElement }) {
+    const value =
+      event.target.type === 'checkbox'
+        ? event.target.checked
+        : event.target.value;
+    controller.setValue(event.target.name, value);
+    element.requestUpdate();
+    return method.call(element, event);
+  };
+};
 
+export const isElementPresentOnShadowRoot = function(
+  input: HTMLInputElement,
+  controller: FormGroupController
+) {
+  const isInputPresent = Object.keys(controller.values).filter(
+    v => v === input.name
+  );
+  if (!isInputPresent.length) {
+    throw new Error(
+      `Missing input element with name ${input.innerHTML} for form ${
+        controller.getFormElement().name
+      }`
+    );
+  }
+  return isInputPresent.length;
+};
+const noop = function() {};
 export function Form(
   options: FormOptions = {
     strategy: 'none'
   } as any
 ) {
-  return (protoOrDescriptor: Object, name?: string | number | symbol) => {
+  return function(
+    this: LitElement,
+    clazz: Object,
+    name?: string | number | symbol
+  ) {
     const controller = new FormGroupController();
-    Object.defineProperty(protoOrDescriptor.constructor.prototype, name, {
-      // tslint:disable-next-line:no-any no symbol in index
+    const originalDestroy = clazz.constructor.prototype.OnDestroy || noop;
+    const originalUpdate = clazz.constructor.prototype.OnUpdateFirst || noop;
+
+    clazz.constructor.prototype.OnUpdateFirst = function() {
+      if (!options.name) {
+        throw new Error('Missing form name');
+      }
+      const form = this.shadowRoot.querySelector(
+        `form[name="${options.name}"]`
+      );
+      controller.setFormElement(form);
+      if (!form) {
+        throw new Error(`Form element not present inside ${this}`);
+      }
+      const inputs = form.querySelectorAll('input');
+      if (inputs.length) {
+        [...inputs.values()]
+          .filter(i => isElementPresentOnShadowRoot(i, controller))
+          .filter(i => !!i.name)
+          .forEach(
+            (i: HTMLInputElement) =>
+              (i[`on${options.strategy}`] = updateValueAndValidity(
+                i[`on${options.strategy}`] || function() {},
+                controller,
+                this
+              ))
+          );
+      }
+      return originalUpdate.call(this);
+    };
+    clazz.constructor.prototype.OnDestroy = function() {
+      controller.unsubscribe();
+      return originalDestroy.call(this);
+    };
+    Object.defineProperty(clazz.constructor.prototype, name, {
       get(): FormGroupController {
         return controller;
       },
@@ -59,65 +138,6 @@ export function Form(
       configurable: true,
       enumerable: true
     });
-    const originalDestroy = protoOrDescriptor.constructor.prototype.OnDestroy;
-    const originalUpdate =
-      protoOrDescriptor.constructor.prototype.OnUpdateFirst || function() {};
-
-    protoOrDescriptor.constructor.prototype.OnUpdateFirst = function() {
-      const self = this;
-      if (!options.name) {
-        throw new Error('Missing form name');
-      }
-      const form = this.shadowRoot.querySelector(
-        `form[name="${options.name}"]`
-      );
-      if (!form) {
-        throw new Error(`Form element not present inside ${this}`);
-      }
-      const inputs = form.querySelectorAll('input');
-      if (inputs.length) {
-        const isPresentOnStage = (input: HTMLInputElement) => {
-          const isInputPresent = Object.keys(controller.values).filter(
-            v => v === input.name
-          );
-          if (!isInputPresent.length) {
-            throw new Error(
-              `Missing input element with name ${input.innerHTML} for form ${
-                options.name
-              }`
-            );
-          }
-          return isInputPresent.length;
-        };
-        const filtered = [...inputs.values()]
-          .filter(i => isPresentOnStage(i))
-          .filter(i => !!i.name);
-        if (filtered.length) {
-          const updateValueAndValidity = (method: Function) =>
-            function(event: { target: HTMLInputElement }) {
-              const value =
-                event.target.type === 'checkbox'
-                  ? event.target.checked
-                  : event.target.value;
-              controller.setValue(event.target.name, value);
-              self._requestUpdate();
-              return method.call(this, event);
-            } as any;
-          filtered.forEach((i: HTMLInputElement) => {
-            if (options.strategy === 'change') {
-              i.onchange = updateValueAndValidity(i.onchange || function() {});
-            } else if (options.strategy === 'input') {
-              i.oninput = updateValueAndValidity(i.oninput || function() {});
-            }
-          });
-        }
-      }
-      return originalUpdate();
-    };
-    protoOrDescriptor.constructor.prototype.OnDestroy = function() {
-      controller.unsubscribe();
-      return originalDestroy();
-    };
   };
 }
 
@@ -125,8 +145,8 @@ export class FormGroup<T = { [key: string]: string }> {
   name?: string;
   valueChanges: Observable<T>;
   constructor(public values: T) {}
-  getValue(name: string): keyof T {
+  getValue(name: keyof T): keyof T {
     return;
   }
-  setValue(name: string, value: any) {}
+  setValue(name: keyof T, value: any) {}
 }

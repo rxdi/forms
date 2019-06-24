@@ -18,7 +18,7 @@ class FormGroupController {
         this._valueChanges.unsubscribe();
     }
     getValue(name) {
-        return this.valueChanges[name];
+        return this.values[name];
     }
     setValue(name, value) {
         const values = this.values;
@@ -26,15 +26,62 @@ class FormGroupController {
         this.values = values;
         return values;
     }
+    setFormElement(form) {
+        this.form = form;
+    }
+    getFormElement() {
+        return this.form;
+    }
 }
 exports.FormGroupController = FormGroupController;
+exports.updateValueAndValidity = function (method, controller, element) {
+    return function (event) {
+        const value = event.target.type === 'checkbox'
+            ? event.target.checked
+            : event.target.value;
+        controller.setValue(event.target.name, value);
+        element.requestUpdate();
+        return method.call(element, event);
+    };
+};
+exports.isElementPresentOnShadowRoot = function (input, controller) {
+    const isInputPresent = Object.keys(controller.values).filter(v => v === input.name);
+    if (!isInputPresent.length) {
+        throw new Error(`Missing input element with name ${input.innerHTML} for form ${controller.getFormElement().name}`);
+    }
+    return isInputPresent.length;
+};
+const noop = function () { };
 function Form(options = {
     strategy: 'none'
 }) {
-    return (protoOrDescriptor, name) => {
+    return function (clazz, name) {
         const controller = new FormGroupController();
-        Object.defineProperty(protoOrDescriptor.constructor.prototype, name, {
-            // tslint:disable-next-line:no-any no symbol in index
+        const originalDestroy = clazz.constructor.prototype.OnDestroy || noop;
+        const originalUpdate = clazz.constructor.prototype.OnUpdateFirst || noop;
+        clazz.constructor.prototype.OnUpdateFirst = function () {
+            if (!options.name) {
+                throw new Error('Missing form name');
+            }
+            const form = this.shadowRoot.querySelector(`form[name="${options.name}"]`);
+            controller.setFormElement(form);
+            if (!form) {
+                throw new Error(`Form element not present inside ${this}`);
+            }
+            const inputs = form.querySelectorAll('input');
+            if (inputs.length) {
+                [...inputs.values()]
+                    .filter(i => exports.isElementPresentOnShadowRoot(i, controller))
+                    .filter(i => !!i.name)
+                    .forEach((i) => (i[`on${options.strategy}`] = exports.updateValueAndValidity(i[`on${options.strategy}`] || function () { }, controller, this)));
+            }
+            return originalUpdate.call(this);
+        };
+        clazz.constructor.prototype.OnDestroy = function () {
+            controller.unsubscribe();
+            return originalDestroy.call(this);
+        };
+        Object.defineProperty(clazz.constructor.prototype, name, {
             get() {
                 return controller;
             },
@@ -44,54 +91,6 @@ function Form(options = {
             configurable: true,
             enumerable: true
         });
-        const originalDestroy = protoOrDescriptor.constructor.prototype.OnDestroy;
-        const originalUpdate = protoOrDescriptor.constructor.prototype.OnUpdateFirst || function () { };
-        protoOrDescriptor.constructor.prototype.OnUpdateFirst = function () {
-            const self = this;
-            if (!options.name) {
-                throw new Error('Missing form name');
-            }
-            const form = this.shadowRoot.querySelector(`form[name="${options.name}"]`);
-            if (!form) {
-                throw new Error(`Form element not present inside ${this}`);
-            }
-            const inputs = form.querySelectorAll('input');
-            if (inputs.length) {
-                const isPresentOnStage = (input) => {
-                    const isInputPresent = Object.keys(controller.values).filter(v => v === input.name);
-                    if (!isInputPresent.length) {
-                        throw new Error(`Missing input element with name ${input.innerHTML} for form ${options.name}`);
-                    }
-                    return isInputPresent.length;
-                };
-                const filtered = [...inputs.values()]
-                    .filter(i => isPresentOnStage(i))
-                    .filter(i => !!i.name);
-                if (filtered.length) {
-                    const updateValueAndValidity = (method) => function (event) {
-                        const value = event.target.type === 'checkbox'
-                            ? event.target.checked
-                            : event.target.value;
-                        controller.setValue(event.target.name, value);
-                        self._requestUpdate();
-                        return method.call(this, event);
-                    };
-                    filtered.forEach((i) => {
-                        if (options.strategy === 'change') {
-                            i.onchange = updateValueAndValidity(i.onchange || function () { });
-                        }
-                        else if (options.strategy === 'input') {
-                            i.oninput = updateValueAndValidity(i.oninput || function () { });
-                        }
-                    });
-                }
-            }
-            return originalUpdate();
-        };
-        protoOrDescriptor.constructor.prototype.OnDestroy = function () {
-            controller.unsubscribe();
-            return originalDestroy();
-        };
     };
 }
 exports.Form = Form;
