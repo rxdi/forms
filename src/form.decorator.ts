@@ -1,6 +1,5 @@
-import { LitElement, UpdatingElement } from '@rxdi/lit-html';
+import { UpdatingElement } from '@rxdi/lit-html';
 import { FormOptions } from './form.tokens';
-import { FormController } from './form.controller';
 import {
   isElementPresentOnShadowRoot,
   updateValueAndValidity
@@ -14,10 +13,9 @@ export function Form(
   } as any
 ) {
   return function(clazz: Object, name: string | number | symbol) {
-    const controller = new FormController();
+    const formGroup = new FormGroup();
     const Destroy = clazz.constructor.prototype.OnDestroy || noop;
     const Update = clazz.constructor.prototype.OnUpdateFirst || noop;
-
     clazz.constructor.prototype.OnUpdateFirst = function() {
       if (!options.name) {
         throw new Error('Missing form name');
@@ -28,42 +26,54 @@ export function Form(
       if (!form) {
         throw new Error(`Form element not present inside ${this}`);
       }
-      controller.setFormElement(form);
-      [...form.querySelectorAll('input').values()]
-        .filter(el => isElementPresentOnShadowRoot(el, controller))
+      formGroup.setFormElement(form);
+      const inputs = [...form.querySelectorAll('input').values()]
+        .filter(el => isElementPresentOnShadowRoot(el, formGroup))
         .filter(el => !!el.name)
-        .forEach(
-          (el: HTMLInputElement) =>
-            (el[`on${options.strategy}`] = updateValueAndValidity(
-              el[`on${options.strategy}`] || function() {},
-              controller,
-              this
-            ))
-        );
+        .map((el: HTMLInputElement) => {
+          el[`on${options.strategy}`] = updateValueAndValidity(
+            el[`on${options.strategy}`] || function() {},
+            formGroup,
+            this
+          );
+          return el;
+        });
+        formGroup.setFormInputs(inputs);
       return Update.call(this);
     };
     clazz.constructor.prototype.OnDestroy = function() {
-      controller.unsubscribe();
+      // controller.unsubscribe();
       return Destroy.call(this);
     };
     Object.defineProperty(clazz.constructor.prototype, name, {
-      get(): FormController {
-        return controller;
+      get(): FormGroup {
+        return formGroup;
       },
       set(this: UpdatingElement, form: FormGroup) {
         Object.keys(form.value).forEach(v => {
           const value = form.value[v];
+          this[name].errors[v] = this[name].errors[v] || {};
           if (value.constructor === Array) {
             if (value[1].constructor === Array) {
               value[1].forEach(val => {
-                const oldValidators = controller.validators.get(v) || [];
-                controller.validators.set(v, [...oldValidators, val]);
+                const oldValidators = formGroup.validators.get(v) || [];
+                formGroup.validators.set(v, [...oldValidators, val]);
               });
             }
-            form.value[v] = value[0] as any;
+            if (
+              value[0].constructor === String ||
+              value[0].constructor === Number
+            ) {
+              (form.value[v] as any) = value[0] as string | number;
+            } else {
+              throw new Error(
+                `Input value must be of type 'string' or 'number'`
+              );
+            }
           }
         });
-        controller.value = form.value;
+        formGroup.value = form.value;
+
       },
       configurable: true,
       enumerable: true

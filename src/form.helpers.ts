@@ -1,35 +1,31 @@
-import { FormController } from './form.controller';
 import { LitElement } from '@rxdi/lit-html';
+import { FormGroup } from './form.group';
 
 export const updateValueAndValidity = function(
   method: Function,
-  controller: FormController,
+  formGroup: FormGroup,
   parentElement: LitElement
 ) {
-  return function(event: { target: HTMLInputElement }) {
+  return function(this: HTMLInputElement, event: { target: HTMLInputElement }) {
     const value = this.type === 'checkbox' ? this.checked : this.value;
-    const form = controller.getFormElement();
-
-    const errors = controller.validate(parentElement, this);
+    this.setAttribute('value', value as any);
+    const form = formGroup.getFormElement();
+    const errors = formGroup.validate(parentElement, this);
     if (errors.length) {
-      form.classList.add('has-error');
       form.invalid = true;
-      parentElement.requestUpdate();
-      return;
     } else {
-      form.classList.remove('has-error');
-      delete controller.errors[this.name];
-      controller.setValue(this.name, value);
+      formGroup.errors[this.name] = {} as any;
       form.invalid = false;
-      parentElement.requestUpdate();
+      formGroup.setValue(this.name, value);
     }
+    parentElement.requestUpdate();
     return method.call(parentElement, event);
   };
 };
 
 export const isElementPresentOnShadowRoot = function(
   input: HTMLInputElement,
-  controller: FormController
+  controller: FormGroup
 ) {
   const isInputPresent = Object.keys(controller.value).filter(
     v => v === input.name

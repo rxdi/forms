@@ -1,23 +1,20 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateValueAndValidity = function (method, controller, parentElement) {
+exports.updateValueAndValidity = function (method, formGroup, parentElement) {
     return function (event) {
         const value = this.type === 'checkbox' ? this.checked : this.value;
-        const form = controller.getFormElement();
-        const errors = controller.validate(parentElement, this);
+        this.setAttribute('value', value);
+        const form = formGroup.getFormElement();
+        const errors = formGroup.validate(parentElement, this);
         if (errors.length) {
-            form.classList.add('has-error');
             form.invalid = true;
-            parentElement.requestUpdate();
-            return;
         }
         else {
-            form.classList.remove('has-error');
-            delete controller.errors[this.name];
-            controller.setValue(this.name, value);
+            formGroup.errors[this.name] = {};
             form.invalid = false;
-            parentElement.requestUpdate();
+            formGroup.setValue(this.name, value);
         }
+        parentElement.requestUpdate();
         return method.call(parentElement, event);
     };
 };
