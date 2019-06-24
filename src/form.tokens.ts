@@ -3,3 +3,7 @@ export interface FormOptions {
   name: string;
   strategy?: FormStrategies;
 }
+
+export interface FormInputOptions {
+  [key: string]: [string, Function[]];
+}

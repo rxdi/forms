@@ -1,13 +1,24 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateValueAndValidity = function (method, controller, element) {
+exports.updateValueAndValidity = function (method, controller, parentElement) {
     return function (event) {
-        const value = event.target.type === 'checkbox'
-            ? event.target.checked
-            : event.target.value;
-        controller.setValue(event.target.name, value);
-        element.requestUpdate();
-        return method.call(element, event);
+        const value = this.type === 'checkbox' ? this.checked : this.value;
+        const form = controller.getFormElement();
+        const errors = controller.validate(parentElement, this);
+        if (errors.length) {
+            form.classList.add('has-error');
+            form.invalid = true;
+            parentElement.requestUpdate();
+            return;
+        }
+        else {
+            form.classList.remove('has-error');
+            delete controller.errors[this.name];
+            controller.setValue(this.name, value);
+            form.invalid = false;
+            parentElement.requestUpdate();
+        }
+        return method.call(parentElement, event);
     };
 };
 exports.isElementPresentOnShadowRoot = function (input, controller) {

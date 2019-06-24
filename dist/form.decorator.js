@@ -20,9 +20,9 @@ function Form(options = {
             }
             controller.setFormElement(form);
             [...form.querySelectorAll('input').values()]
-                .filter(i => form_helpers_1.isElementPresentOnShadowRoot(i, controller))
-                .filter(i => !!i.name)
-                .forEach((i) => (i[`on${options.strategy}`] = form_helpers_1.updateValueAndValidity(i[`on${options.strategy}`] || function () { }, controller, this)));
+                .filter(el => form_helpers_1.isElementPresentOnShadowRoot(el, controller))
+                .filter(el => !!el.name)
+                .forEach((el) => (el[`on${options.strategy}`] = form_helpers_1.updateValueAndValidity(el[`on${options.strategy}`] || function () { }, controller, this)));
             return Update.call(this);
         };
         clazz.constructor.prototype.OnDestroy = function () {
@@ -33,8 +33,20 @@ function Form(options = {
             get() {
                 return controller;
             },
-            set(value) {
-                controller.value = value.value;
+            set(form) {
+                Object.keys(form.value).forEach(v => {
+                    const value = form.value[v];
+                    if (value.constructor === Array) {
+                        if (value[1].constructor === Array) {
+                            value[1].forEach(val => {
+                                const oldValidators = controller.validators.get(v) || [];
+                                controller.validators.set(v, [...oldValidators, val]);
+                            });
+                        }
+                        form.value[v] = value[0];
+                    }
+                });
+                controller.value = form.value;
             },
             configurable: true,
             enumerable: true

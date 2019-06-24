@@ -30,12 +30,12 @@ export function Form(
       }
       controller.setFormElement(form);
       [...form.querySelectorAll('input').values()]
-        .filter(i => isElementPresentOnShadowRoot(i, controller))
-        .filter(i => !!i.name)
+        .filter(el => isElementPresentOnShadowRoot(el, controller))
+        .filter(el => !!el.name)
         .forEach(
-          (i: HTMLInputElement) =>
-            (i[`on${options.strategy}`] = updateValueAndValidity(
-              i[`on${options.strategy}`] || function() {},
+          (el: HTMLInputElement) =>
+            (el[`on${options.strategy}`] = updateValueAndValidity(
+              el[`on${options.strategy}`] || function() {},
               controller,
               this
             ))
@@ -50,8 +50,20 @@ export function Form(
       get(): FormController {
         return controller;
       },
-      set(this: UpdatingElement, value: FormGroup) {
-        controller.value = value.value;
+      set(this: UpdatingElement, form: FormGroup) {
+        Object.keys(form.value).forEach(v => {
+          const value = form.value[v];
+          if (value.constructor === Array) {
+            if (value[1].constructor === Array) {
+              value[1].forEach(val => {
+                const oldValidators = controller.validators.get(v) || [];
+                controller.validators.set(v, [...oldValidators, val]);
+              });
+            }
+            form.value[v] = value[0] as any;
+          }
+        });
+        controller.value = form.value;
       },
       configurable: true,
       enumerable: true
