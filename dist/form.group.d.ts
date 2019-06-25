@@ -19,13 +19,13 @@ export declare class FormGroup<T = FormInputOptions, E = {
     setOptions(options: FormOptions): void;
     getOptions(): FormOptions;
     readonly valueChanges: import("rxjs").Observable<T>;
-    updateValueAndValidity(): ({
+    updateValueAndValidity(): Promise<({
         errors: any[];
         element?: undefined;
     } | {
         element: HTMLInputElement;
         errors: any[];
-    })[];
+    })[]>;
     private updateValueAndValidityOnEvent;
     querySelectForm(shadowRoot: HTMLElement): HTMLFormElement;
     querySelectorAllInputs(): HTMLInputElement[];
@@ -41,6 +41,8 @@ export declare class FormGroup<T = FormInputOptions, E = {
     getError(inputName: keyof T, errorKey: keyof E): never;
     hasError(inputName: keyof T, errorKey: keyof E): boolean;
     reset(): void;
+    setFormValidity(validity?: boolean): void;
+    resetErrors(): void;
     value: T;
     unsubscribe(): void;
     subscribe(): void;

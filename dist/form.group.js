@@ -1,4 +1,12 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const rxjs_1 = require("rxjs");
 class FormGroup {
@@ -27,9 +35,13 @@ class FormGroup {
         return this._valueChanges.asObservable();
     }
     updateValueAndValidity() {
-        return this.querySelectorAllInputs()
-            .map(input => this.validate(input))
-            .filter(e => e.errors.length);
+        return __awaiter(this, void 0, void 0, function* () {
+            const inputs = this.querySelectorAllInputs()
+                .map(input => this.validate(input))
+                .filter(e => e.errors.length);
+            yield this.getParentElement().requestUpdate();
+            return inputs;
+        });
     }
     updateValueAndValidityOnEvent(method) {
         const self = this;
@@ -54,6 +66,7 @@ class FormGroup {
             }
             const parentElement = self.getParentElement();
             const form = self.getFormElement();
+            self.resetErrors();
             const { errors } = self.validate(this);
             if (errors.length) {
                 form.invalid = true;
@@ -70,7 +83,7 @@ class FormGroup {
     querySelectForm(shadowRoot) {
         const form = shadowRoot.querySelector(`form[name="${this.options.name}"]`);
         if (!form) {
-            throw new Error(`Form element not present inside ${this}`);
+            throw new Error(`Form element with name "${this.options.name}" not present inside ${this.getParentElement().outerHTML} component`);
         }
         form.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -131,12 +144,19 @@ class FormGroup {
     }
     reset() {
         this.form.reset();
+        this.resetErrors();
+        this.setFormValidity();
+    }
+    setFormValidity(validity = true) {
+        this.valid = validity;
+        this.invalid = !validity;
+    }
+    resetErrors() {
         this.errors = Object.keys(this.errors).reduce((object, key) => {
             object[key] = {};
             return object;
         }, {});
-        this.valid = true;
-        this.invalid = false;
+        this.setFormValidity();
     }
     get value() {
         return this._valueChanges.getValue();

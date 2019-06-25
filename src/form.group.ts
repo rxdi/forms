@@ -40,10 +40,12 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     return this._valueChanges.asObservable();
   }
 
-  updateValueAndValidity() {
-    return this.querySelectorAllInputs()
+  async updateValueAndValidity() {
+    const inputs = this.querySelectorAllInputs()
       .map(input => this.validate(input))
       .filter(e => e.errors.length);
+    await this.getParentElement().requestUpdate();
+    return inputs;
   }
 
   private updateValueAndValidityOnEvent(method: Function) {
@@ -70,14 +72,18 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
 
       if (self.options.multi && hasMultipleBindings > 1) {
         [
-          ...(self
+          ...((self
             .getFormElement()
-            .querySelectorAll('input:checked') as any).values()
+            .querySelectorAll('input:checked') as any) as Map<
+            string,
+            HTMLInputElement
+          >).values()
         ].forEach(el => (el.checked = false));
         this.checked = true;
       }
       const parentElement = self.getParentElement();
       const form = self.getFormElement();
+      self.resetErrors();
       const { errors } = self.validate(this);
       if (errors.length) {
         form.invalid = true;
@@ -96,7 +102,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
       `form[name="${this.options.name}"]`
     ) as HTMLFormElement;
     if (!form) {
-      throw new Error(`Form element not present inside ${this}`);
+      throw new Error(`Form element with name "${this.options.name}" not present inside ${this.getParentElement().outerHTML} component`);
     }
     form.addEventListener('submit', (e: Event) => {
       e.preventDefault();
@@ -174,12 +180,21 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
 
   public reset() {
     this.form.reset();
+    this.resetErrors();
+    this.setFormValidity();
+  }
+
+  public setFormValidity(validity: boolean = true) {
+    this.valid = validity;
+    this.invalid = !validity;
+  }
+
+  public resetErrors() {
     this.errors = Object.keys(this.errors).reduce((object, key) => {
       object[key] = {};
-      return object
+      return object;
     }, {}) as T;
-    this.valid = true;
-    this.invalid = false;
+    this.setFormValidity();
   }
 
   public get value() {
