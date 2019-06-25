@@ -31,7 +31,7 @@ class FormGroup {
             .map(input => this.validate(input))
             .filter(e => e.errors.length);
     }
-    updateValueAndValidityOnEvent(method = function () { }) {
+    updateValueAndValidityOnEvent(method) {
         const self = this;
         return function (event) {
             let value = this.value;
@@ -85,7 +85,7 @@ class FormGroup {
             .filter(el => this.isInputPresentOnStage(el))
             .filter(el => !!el.name)
             .map((el) => {
-            el[`on${this.options.strategy}`] = this.updateValueAndValidityOnEvent(el[`on${this.options.strategy}`]);
+            el[`on${this.options.strategy}`] = this.updateValueAndValidityOnEvent(el[`on${this.options.strategy}`] || function () { });
             return el;
         });
     }
@@ -131,7 +131,10 @@ class FormGroup {
     }
     reset() {
         this.form.reset();
-        this.errors = {};
+        this.errors = Object.keys(this.errors).reduce((object, key) => {
+            object[key] = {};
+            return object;
+        }, {});
         this.valid = true;
         this.invalid = false;
     }

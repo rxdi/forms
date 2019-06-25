@@ -14,15 +14,15 @@ export function Form(
     }
     const formGroup = new FormGroup();
     formGroup.setOptions(options);
-    const Destroy = clazz.constructor.prototype.OnDestroy || noop;
-    const Update = clazz.constructor.prototype.OnUpdateFirst || noop;
-    clazz.constructor.prototype.OnUpdateFirst = function() {
+    const Destroy = clazz.constructor.prototype.disconnectedCallback || noop;
+    const Update = clazz.constructor.prototype.firstUpdated || noop;
+    clazz.constructor.prototype.firstUpdated = function() {
       formGroup.setParentElement(this);
       formGroup.setElement(formGroup.querySelectForm(this.shadowRoot));
       formGroup.setInputs(formGroup.querySelectorAllInputs());
       return Update.call(this);
     };
-    clazz.constructor.prototype.OnDestroy = function() {
+    clazz.constructor.prototype.disconnectedCallback = function() {
       // controller.unsubscribe();
       return Destroy.call(this);
     };

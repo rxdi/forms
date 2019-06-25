@@ -11,15 +11,15 @@ function Form(options = {
         }
         const formGroup = new form_group_1.FormGroup();
         formGroup.setOptions(options);
-        const Destroy = clazz.constructor.prototype.OnDestroy || rxjs_1.noop;
-        const Update = clazz.constructor.prototype.OnUpdateFirst || rxjs_1.noop;
-        clazz.constructor.prototype.OnUpdateFirst = function () {
+        const Destroy = clazz.constructor.prototype.disconnectedCallback || rxjs_1.noop;
+        const Update = clazz.constructor.prototype.firstUpdated || rxjs_1.noop;
+        clazz.constructor.prototype.firstUpdated = function () {
             formGroup.setParentElement(this);
             formGroup.setElement(formGroup.querySelectForm(this.shadowRoot));
             formGroup.setInputs(formGroup.querySelectorAllInputs());
             return Update.call(this);
         };
-        clazz.constructor.prototype.OnDestroy = function () {
+        clazz.constructor.prototype.disconnectedCallback = function () {
             // controller.unsubscribe();
             return Destroy.call(this);
         };

@@ -1,7 +1,7 @@
 import { FormInputOptions, FormOptions } from './form.tokens';
 import { LitElement } from '@rxdi/lit-html';
 export declare class FormGroup<T = FormInputOptions, E = {
-    [key: string]: any;
+    [key: string]: never;
 }> {
     validators: Map<string, Function[]>;
     valid: boolean;
@@ -38,14 +38,14 @@ export declare class FormGroup<T = FormInputOptions, E = {
         errors: any[];
     };
     get(name: keyof T): HTMLInputElement;
-    getError(inputName: keyof T, errorKey: keyof E): any;
+    getError(inputName: keyof T, errorKey: keyof E): never;
     hasError(inputName: keyof T, errorKey: keyof E): boolean;
     reset(): void;
     value: T;
     unsubscribe(): void;
     subscribe(): void;
     getValue(name: keyof T): T[keyof T];
-    setValue(name: string, value: any): T;
+    setValue(name: string, value: string | boolean | number): T;
     setFormValue(value: T): void;
     setElement(form: HTMLFormElement): void;
     setInputs(inputs: HTMLInputElement[]): void;

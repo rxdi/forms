@@ -2,19 +2,19 @@ import { BehaviorSubject } from 'rxjs';
 import { FormInputOptions, FormOptions } from './form.tokens';
 import { LitElement } from '@rxdi/lit-html';
 
-export class FormGroup<T = FormInputOptions, E = { [key: string]: any }> {
+export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
   public validators: Map<string, Function[]> = new Map();
   public valid: boolean;
   public invalid: boolean;
-  public errors: T = {} as any;
+  public errors: T = {} as T;
 
   private readonly _valueChanges: BehaviorSubject<T> = new BehaviorSubject(
-    {} as any
+    {} as T
   );
   private form: HTMLFormElement;
   private errorMap = new WeakMap();
   private inputs: Map<any, HTMLInputElement> = new Map();
-  private options: FormOptions = {} as any;
+  private options: FormOptions = {} as FormOptions;
   private parentElement: LitElement;
   constructor(value?: T, errors?: keyof E) {
     this.value = value;
@@ -46,7 +46,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: any }> {
       .filter(e => e.errors.length);
   }
 
-  private updateValueAndValidityOnEvent(method: Function = function() {}) {
+  private updateValueAndValidityOnEvent(method: Function) {
     const self = this;
     return function(
       this: HTMLInputElement,
@@ -54,9 +54,12 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: any }> {
     ) {
       let value = this.value;
       const hasMultipleBindings = [
-        ...(self
+        ...((self
           .getFormElement()
-          .querySelectorAll(`input[name="${this.name}"]`) as any).values()
+          .querySelectorAll(`input[name="${this.name}"]`) as any) as Map<
+          string,
+          NodeListOf<Element>
+        >).values()
       ].length;
       if (
         hasMultipleBindings === 1 &&
@@ -113,7 +116,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: any }> {
       .filter(el => !!el.name)
       .map((el: HTMLInputElement) => {
         el[`on${this.options.strategy}`] = this.updateValueAndValidityOnEvent(
-          el[`on${this.options.strategy}`]
+          el[`on${this.options.strategy}`] || function() {}
         );
         return el;
       });
@@ -162,16 +165,19 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: any }> {
   }
 
   public getError(inputName: keyof T, errorKey: keyof E) {
-    return this.errors[inputName][errorKey as any];
+    return this.errors[inputName][errorKey as never];
   }
 
   public hasError(inputName: keyof T, errorKey: keyof E) {
-    return !!this.getError(inputName, errorKey);
+    return !!this.getError(inputName, errorKey as never);
   }
 
   public reset() {
     this.form.reset();
-    this.errors = {} as any;
+    this.errors = Object.keys(this.errors).reduce((object, key) => {
+      object[key] = {};
+      return object
+    }, {}) as T;
     this.valid = true;
     this.invalid = false;
   }
@@ -195,7 +201,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: any }> {
     return this.value[name];
   }
 
-  public setValue(name: string, value: any) {
+  public setValue(name: string, value: string | boolean | number) {
     const values = this.value;
     values[name] = value;
     this.value = values;
