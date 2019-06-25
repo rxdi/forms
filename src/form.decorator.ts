@@ -1,7 +1,7 @@
 import { UpdatingElement } from '@rxdi/lit-html';
 import { FormOptions } from './form.tokens';
-import { noop } from 'rxjs';
 import { FormGroup } from './form.group';
+import { noop } from './rx-fake';
 
 export function Form(
   options: FormOptions = {

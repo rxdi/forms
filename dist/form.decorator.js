@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const rxjs_1 = require("rxjs");
 const form_group_1 = require("./form.group");
+const rx_fake_1 = require("./rx-fake");
 function Form(options = {
     strategy: 'none'
 }) {
@@ -11,8 +11,8 @@ function Form(options = {
         }
         const formGroup = new form_group_1.FormGroup();
         formGroup.setOptions(options);
-        const Destroy = clazz.constructor.prototype.disconnectedCallback || rxjs_1.noop;
-        const Update = clazz.constructor.prototype.firstUpdated || rxjs_1.noop;
+        const Destroy = clazz.constructor.prototype.disconnectedCallback || rx_fake_1.noop;
+        const Update = clazz.constructor.prototype.firstUpdated || rx_fake_1.noop;
         clazz.constructor.prototype.firstUpdated = function () {
             formGroup.setParentElement(this);
             formGroup.setElement(formGroup.querySelectForm(this.shadowRoot));

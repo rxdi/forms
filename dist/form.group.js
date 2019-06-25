@@ -1,17 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const rxjs_1 = require("rxjs");
+const rx_fake_1 = require("./rx-fake");
 class FormGroup {
     constructor(value, errors) {
         this.validators = new Map();
         this.valid = true;
         this.invalid = false;
         this.errors = {};
-        this._valueChanges = new rxjs_1.BehaviorSubject({});
         this.errorMap = new WeakMap();
         this.inputs = new Map();
         this.options = {};
-        this.value = value;
+        this._valueChanges = new rx_fake_1.BehaviorSubject(value);
     }
     setParentElement(parent) {
         this.parentElement = parent;
@@ -26,7 +25,7 @@ class FormGroup {
         return this.options;
     }
     get valueChanges() {
-        return this._valueChanges.asObservable();
+        return this._valueChanges;
     }
     updateValueAndValidity() {
         this.resetErrors();
@@ -51,9 +50,7 @@ class FormGroup {
             }
             if (self.options.multi && hasMultipleBindings > 1) {
                 [
-                    ...self
-                        .getFormElement()
-                        .querySelectorAll('input:checked').values()
+                    ...(self.getFormElement().querySelectorAll('input:checked')).values()
                 ].forEach(el => (el.checked = false));
                 this.checked = true;
             }
@@ -163,12 +160,12 @@ class FormGroup {
     set value(value) {
         this._valueChanges.next(value);
     }
-    unsubscribe() {
-        this._valueChanges.unsubscribe();
-    }
-    subscribe() {
-        this._valueChanges.subscribe();
-    }
+    // public unsubscribe() {
+    //   this._valueChanges.unsubscribe();
+    // }
+    // public subscribe() {
+    //   this._valueChanges.subscribe();
+    // }
     getValue(name) {
         return this.value[name];
     }

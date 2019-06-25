@@ -1,6 +1,6 @@
-import { BehaviorSubject } from 'rxjs';
 import { FormInputOptions, FormOptions } from './form.tokens';
 import { LitElement } from '@rxdi/lit-html';
+import { BehaviorSubject } from './rx-fake';
 
 export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
   public validators: Map<string, Function[]> = new Map();
@@ -8,16 +8,15 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
   public invalid: boolean = false;
   public errors: T = {} as T;
 
-  private readonly _valueChanges: BehaviorSubject<T> = new BehaviorSubject(
-    {} as T
-  );
+  private readonly _valueChanges: BehaviorSubject<T>;
   private form: HTMLFormElement;
   private errorMap = new WeakMap();
-  private inputs: Map<any, HTMLInputElement> = new Map();
+  private inputs: Map<keyof T, HTMLInputElement> = new Map();
   private options: FormOptions = {} as FormOptions;
   private parentElement: LitElement;
-  constructor(value?: T, errors?: keyof E) {
-    this.value = value;
+
+  constructor(value?: T, errors?: E) {
+    this._valueChanges = new BehaviorSubject<T>(value);
   }
 
   setParentElement(parent: LitElement) {
@@ -37,7 +36,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
   }
 
   get valueChanges() {
-    return this._valueChanges.asObservable();
+    return this._valueChanges;
   }
 
   updateValueAndValidity() {
@@ -73,12 +72,9 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
 
       if (self.options.multi && hasMultipleBindings > 1) {
         [
-          ...((self
-            .getFormElement()
-            .querySelectorAll('input:checked') as any) as Map<
-            string,
-            HTMLInputElement
-          >).values()
+          ...((<never>(
+            self.getFormElement().querySelectorAll('input:checked')
+          )) as Map<string, HTMLInputElement>).values()
         ].forEach(el => (el.checked = false));
         this.checked = true;
       }
@@ -90,7 +86,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
         form.invalid = true;
         form.valid = false;
       } else {
-        self.errors[this.name] = {} as any;
+        self.errors[this.name] = {} as E;
         form.invalid = false;
         form.valid = true;
         self.setValue(this.name, value);
@@ -120,7 +116,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
 
   public querySelectorAllInputs() {
     return [
-      ...((this.form.querySelectorAll('input') as any) as Map<
+      ...((<never>this.form.querySelectorAll('input')) as Map<
         string,
         HTMLInputElement
       >).values()
@@ -217,12 +213,12 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     this._valueChanges.next(value);
   }
 
-  public unsubscribe() {
-    this._valueChanges.unsubscribe();
-  }
-  public subscribe() {
-    this._valueChanges.subscribe();
-  }
+  // public unsubscribe() {
+  //   this._valueChanges.unsubscribe();
+  // }
+  // public subscribe() {
+  //   this._valueChanges.subscribe();
+  // }
 
   public getValue(name: keyof T): T[keyof T] {
     return this.value[name];
@@ -244,7 +240,9 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
   }
 
   public setInputs(inputs: HTMLInputElement[]) {
-    this.inputs = new Map(inputs.map(e => [e.name, e]));
+    this.inputs = new Map<keyof T, HTMLInputElement>(
+      inputs.map(e => [e.name as keyof T, e])
+    );
   }
 
   public getFormElement() {
