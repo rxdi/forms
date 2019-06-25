@@ -8,12 +8,30 @@ class FormGroup {
         this._valueChanges = new rxjs_1.BehaviorSubject({});
         this.errorMap = new WeakMap();
         this.inputs = new Map();
+        this.options = {};
         this.value = value;
+    }
+    setParentElement(parent) {
+        this.parentElement = parent;
+    }
+    getParentElement() {
+        return this.parentElement;
+    }
+    setOptions(options) {
+        Object.assign(this.options, options);
+    }
+    getOptions() {
+        return this.options;
     }
     get valueChanges() {
         return this._valueChanges.asObservable();
     }
-    updateValueAndValidity(method, parentElement, multi = true) {
+    updateValueAndValidity() {
+        return this.querySelectorAllInputs()
+            .map(input => this.validate(input))
+            .filter(e => e.errors.length);
+    }
+    updateValueAndValidityOnEvent(method = function () { }) {
         const self = this;
         return function (event) {
             let value = this.value;
@@ -26,7 +44,7 @@ class FormGroup {
                 (this.type === 'checkbox' || this.type === 'radio')) {
                 value = String(this.checked);
             }
-            if (multi && hasMultipleBindings > 1) {
+            if (self.options.multi && hasMultipleBindings > 1) {
                 [
                     ...self
                         .getFormElement()
@@ -34,8 +52,9 @@ class FormGroup {
                 ].forEach(el => (el.checked = false));
                 this.checked = true;
             }
+            const parentElement = self.getParentElement();
             const form = self.getFormElement();
-            const errors = self.validate(parentElement, this);
+            const { errors } = self.validate(this);
             if (errors.length) {
                 form.invalid = true;
             }
@@ -48,22 +67,25 @@ class FormGroup {
             return method.call(parentElement, event);
         };
     }
-    querySelectForm(shadowRoot, options) {
-        const form = shadowRoot.querySelector(`form[name="${options.name}"]`);
+    querySelectForm(shadowRoot) {
+        const form = shadowRoot.querySelector(`form[name="${this.options.name}"]`);
         if (!form) {
             throw new Error(`Form element not present inside ${this}`);
         }
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
         return form;
     }
-    querySelectorAllInputs(self, options) {
+    querySelectorAllInputs() {
         return [
             ...this.form.querySelectorAll('input').values()
         ]
             .filter(el => this.isInputPresentOnStage(el))
             .filter(el => !!el.name)
             .map((el) => {
-            el.ondragleave;
-            el[`on${options.strategy}`] = this.updateValueAndValidity(el[`on${options.strategy}`] || function () { }, self, options.multi);
+            el[`on${this.options.strategy}`] = this.updateValueAndValidityOnEvent(el[`on${this.options.strategy}`]);
             return el;
         });
     }
@@ -74,18 +96,18 @@ class FormGroup {
         }
         return isInputPresent.length;
     }
-    validate(element, input) {
+    validate(input) {
         const validators = this.validators.get(input.name);
         let errors = [];
         if (validators && validators.length) {
             errors = validators
                 .map(v => {
                 this.errors[input.name] = this.errors[input.name] || {};
-                const error = v.bind(element)(input);
+                const error = v.bind(this.getParentElement())(input);
                 if (error && error.key) {
                     this.errors[input.name][error.key] = error.message;
                     this.errorMap.set(v, error.key);
-                    return this.errors[input.name];
+                    return { key: error.key, message: error.message };
                 }
                 else if (this.errorMap.has(v)) {
                     delete this.errors[input.name][this.errorMap.get(v)];
@@ -93,7 +115,10 @@ class FormGroup {
             })
                 .filter(i => !!i);
         }
-        return errors;
+        if (!errors.length) {
+            return { errors: [] };
+        }
+        return { element: input, errors };
     }
     get(name) {
         return this.inputs.get(name);
@@ -134,10 +159,10 @@ class FormGroup {
     setFormValue(value) {
         this.value = value;
     }
-    setFormElement(form) {
+    setElement(form) {
         this.form = form;
     }
-    setFormInputs(inputs) {
+    setInputs(inputs) {
         this.inputs = new Map(inputs.map(e => [e.name, e]));
     }
     getFormElement() {

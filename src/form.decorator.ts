@@ -13,11 +13,13 @@ export function Form(
       throw new Error('Missing form name');
     }
     const formGroup = new FormGroup();
+    formGroup.setOptions(options);
     const Destroy = clazz.constructor.prototype.OnDestroy || noop;
     const Update = clazz.constructor.prototype.OnUpdateFirst || noop;
     clazz.constructor.prototype.OnUpdateFirst = function() {
-      formGroup.setFormElement(formGroup.querySelectForm(this.shadowRoot, options));
-      formGroup.setFormInputs(formGroup.querySelectorAllInputs(this, options));
+      formGroup.setParentElement(this);
+      formGroup.setElement(formGroup.querySelectForm(this.shadowRoot));
+      formGroup.setInputs(formGroup.querySelectorAllInputs());
       return Update.call(this);
     };
     clazz.constructor.prototype.OnDestroy = function() {

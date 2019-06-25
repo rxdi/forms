@@ -10,11 +10,13 @@ function Form(options = {
             throw new Error('Missing form name');
         }
         const formGroup = new form_group_1.FormGroup();
+        formGroup.setOptions(options);
         const Destroy = clazz.constructor.prototype.OnDestroy || rxjs_1.noop;
         const Update = clazz.constructor.prototype.OnUpdateFirst || rxjs_1.noop;
         clazz.constructor.prototype.OnUpdateFirst = function () {
-            formGroup.setFormElement(formGroup.querySelectForm(this.shadowRoot, options));
-            formGroup.setFormInputs(formGroup.querySelectorAllInputs(this, options));
+            formGroup.setParentElement(this);
+            formGroup.setElement(formGroup.querySelectForm(this.shadowRoot));
+            formGroup.setInputs(formGroup.querySelectorAllInputs());
             return Update.call(this);
         };
         clazz.constructor.prototype.OnDestroy = function () {

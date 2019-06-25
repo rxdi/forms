@@ -11,15 +11,32 @@ export declare class FormGroup<T = FormInputOptions, E = {
     private form;
     private errorMap;
     private inputs;
-    constructor(value?: T, errors?: E);
+    private options;
+    private parentElement;
+    constructor(value?: T, errors?: keyof E);
+    setParentElement(parent: LitElement): void;
+    getParentElement(): LitElement;
+    setOptions(options: FormOptions): void;
+    getOptions(): FormOptions;
     readonly valueChanges: import("rxjs").Observable<T>;
-    updateValueAndValidity(method: Function, parentElement: LitElement, multi?: boolean): (this: HTMLInputElement, event: {
-        target: HTMLInputElement;
-    }) => any;
-    querySelectForm(shadowRoot: HTMLElement, options: FormOptions): HTMLFormElement;
-    querySelectorAllInputs(self: LitElement, options: FormOptions): HTMLInputElement[];
+    updateValueAndValidity(): ({
+        errors: any[];
+        element?: undefined;
+    } | {
+        element: HTMLInputElement;
+        errors: any[];
+    })[];
+    private updateValueAndValidityOnEvent;
+    querySelectForm(shadowRoot: HTMLElement): HTMLFormElement;
+    querySelectorAllInputs(): HTMLInputElement[];
     isInputPresentOnStage(input: HTMLInputElement): number;
-    validate(element: LitElement, input: HTMLInputElement): any[];
+    validate(input: HTMLInputElement): {
+        errors: any[];
+        element?: undefined;
+    } | {
+        element: HTMLInputElement;
+        errors: any[];
+    };
     get(name: keyof T): HTMLInputElement;
     getError(inputName: keyof T, errorKey: keyof E): any;
     hasError(inputName: keyof T, errorKey: keyof E): boolean;
@@ -30,7 +47,7 @@ export declare class FormGroup<T = FormInputOptions, E = {
     getValue(name: keyof T): T[keyof T];
     setValue(name: string, value: any): T;
     setFormValue(value: T): void;
-    setFormElement(form: HTMLFormElement): void;
-    setFormInputs(inputs: HTMLInputElement[]): void;
+    setElement(form: HTMLFormElement): void;
+    setInputs(inputs: HTMLInputElement[]): void;
     getFormElement(): HTMLFormElement;
 }

@@ -2,7 +2,7 @@ import { BehaviorSubject } from 'rxjs';
 import { FormInputOptions, FormOptions } from './form.tokens';
 import { LitElement } from '@rxdi/lit-html';
 
-export class FormGroup<T = FormInputOptions, E = {[key: string]: any;}> {
+export class FormGroup<T = FormInputOptions, E = { [key: string]: any }> {
   public validators: Map<string, Function[]> = new Map();
   public valid: boolean;
   public invalid: boolean;
@@ -14,20 +14,39 @@ export class FormGroup<T = FormInputOptions, E = {[key: string]: any;}> {
   private form: HTMLFormElement;
   private errorMap = new WeakMap();
   private inputs: Map<any, HTMLInputElement> = new Map();
-
+  private options: FormOptions = {} as any;
+  private parentElement: LitElement;
   constructor(value?: T, errors?: keyof E) {
     this.value = value;
+  }
+
+  setParentElement(parent: LitElement) {
+    this.parentElement = parent;
+  }
+
+  getParentElement() {
+    return this.parentElement;
+  }
+
+  setOptions(options: FormOptions) {
+    Object.assign(this.options, options);
+  }
+
+  getOptions() {
+    return this.options;
   }
 
   get valueChanges() {
     return this._valueChanges.asObservable();
   }
 
-  public updateValueAndValidity(
-    method: Function,
-    parentElement: LitElement,
-    multi: boolean = true
-  ) {
+  updateValueAndValidity() {
+    return this.querySelectorAllInputs()
+      .map(input => this.validate(input))
+      .filter(e => e.errors.length);
+  }
+
+  private updateValueAndValidityOnEvent(method: Function = function() {}) {
     const self = this;
     return function(
       this: HTMLInputElement,
@@ -46,7 +65,7 @@ export class FormGroup<T = FormInputOptions, E = {[key: string]: any;}> {
         value = String(this.checked);
       }
 
-      if (multi && hasMultipleBindings > 1) {
+      if (self.options.multi && hasMultipleBindings > 1) {
         [
           ...(self
             .getFormElement()
@@ -54,8 +73,9 @@ export class FormGroup<T = FormInputOptions, E = {[key: string]: any;}> {
         ].forEach(el => (el.checked = false));
         this.checked = true;
       }
+      const parentElement = self.getParentElement();
       const form = self.getFormElement();
-      const errors = self.validate(parentElement, this);
+      const { errors } = self.validate(this);
       if (errors.length) {
         form.invalid = true;
       } else {
@@ -68,20 +88,21 @@ export class FormGroup<T = FormInputOptions, E = {[key: string]: any;}> {
     };
   }
 
-  public querySelectForm(
-    shadowRoot: HTMLElement,
-    options: FormOptions
-  ): HTMLFormElement {
+  public querySelectForm(shadowRoot: HTMLElement): HTMLFormElement {
     const form = shadowRoot.querySelector(
-      `form[name="${options.name}"]`
+      `form[name="${this.options.name}"]`
     ) as HTMLFormElement;
     if (!form) {
       throw new Error(`Form element not present inside ${this}`);
     }
+    form.addEventListener('submit', (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
     return form;
   }
 
-  public querySelectorAllInputs(self: LitElement, options: FormOptions) {
+  public querySelectorAllInputs() {
     return [
       ...((this.form.querySelectorAll('input') as any) as Map<
         string,
@@ -91,11 +112,8 @@ export class FormGroup<T = FormInputOptions, E = {[key: string]: any;}> {
       .filter(el => this.isInputPresentOnStage(el))
       .filter(el => !!el.name)
       .map((el: HTMLInputElement) => {
-        el.ondragleave;
-        el[`on${options.strategy}`] = this.updateValueAndValidity(
-          el[`on${options.strategy}`] || function() {},
-          self,
-          options.multi
+        el[`on${this.options.strategy}`] = this.updateValueAndValidityOnEvent(
+          el[`on${this.options.strategy}`]
         );
         return el;
       });
@@ -115,25 +133,28 @@ export class FormGroup<T = FormInputOptions, E = {[key: string]: any;}> {
     return isInputPresent.length;
   }
 
-  public validate(element: LitElement, input: HTMLInputElement) {
+  public validate(input: HTMLInputElement) {
     const validators = this.validators.get(input.name);
     let errors = [];
     if (validators && validators.length) {
       errors = validators
         .map(v => {
           this.errors[input.name] = this.errors[input.name] || {};
-          const error = v.bind(element)(input);
+          const error = v.bind(this.getParentElement())(input);
           if (error && error.key) {
             this.errors[input.name][error.key] = error.message;
             this.errorMap.set(v, error.key);
-            return this.errors[input.name];
+            return { key: error.key, message: error.message };
           } else if (this.errorMap.has(v)) {
             delete this.errors[input.name][this.errorMap.get(v)];
           }
         })
         .filter(i => !!i);
     }
-    return errors;
+    if (!errors.length) {
+      return { errors: [] };
+    }
+    return { element: input, errors };
   }
 
   public get(name: keyof T) {
@@ -185,11 +206,11 @@ export class FormGroup<T = FormInputOptions, E = {[key: string]: any;}> {
     this.value = value;
   }
 
-  public setFormElement(form: HTMLFormElement) {
+  public setElement(form: HTMLFormElement) {
     this.form = form;
   }
 
-  public setFormInputs(inputs: HTMLInputElement[]) {
+  public setInputs(inputs: HTMLInputElement[]) {
     this.inputs = new Map(inputs.map(e => [e.name, e]));
   }
 
