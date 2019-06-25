@@ -16,7 +16,7 @@ function Form(options = {
         clazz.constructor.prototype.firstUpdated = function () {
             formGroup.setParentElement(this);
             formGroup.setElement(formGroup.querySelectForm(this.shadowRoot));
-            formGroup.setInputs(formGroup.querySelectorAllInputs());
+            formGroup.setInputs(formGroup.mapEventToInputs(formGroup.querySelectorAllInputs()));
             return Update.call(this);
         };
         clazz.constructor.prototype.disconnectedCallback = function () {

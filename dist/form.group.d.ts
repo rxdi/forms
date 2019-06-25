@@ -19,16 +19,17 @@ export declare class FormGroup<T = FormInputOptions, E = {
     setOptions(options: FormOptions): void;
     getOptions(): FormOptions;
     readonly valueChanges: import("rxjs").Observable<T>;
-    updateValueAndValidity(): Promise<({
+    updateValueAndValidity(): ({
         errors: any[];
         element?: undefined;
     } | {
         element: HTMLInputElement;
         errors: any[];
-    })[]>;
+    })[];
     private updateValueAndValidityOnEvent;
     querySelectForm(shadowRoot: HTMLElement): HTMLFormElement;
     querySelectorAllInputs(): HTMLInputElement[];
+    mapEventToInputs(inputs?: HTMLElement[]): HTMLInputElement[];
     isInputPresentOnStage(input: HTMLInputElement): number;
     validate(input: HTMLInputElement): {
         errors: any[];

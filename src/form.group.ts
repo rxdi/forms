@@ -4,8 +4,8 @@ import { LitElement } from '@rxdi/lit-html';
 
 export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
   public validators: Map<string, Function[]> = new Map();
-  public valid: boolean;
-  public invalid: boolean;
+  public valid: boolean = true;
+  public invalid: boolean = false;
   public errors: T = {} as T;
 
   private readonly _valueChanges: BehaviorSubject<T> = new BehaviorSubject(
@@ -40,11 +40,12 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     return this._valueChanges.asObservable();
   }
 
-  async updateValueAndValidity() {
+  updateValueAndValidity() {
+    this.resetErrors();
     const inputs = this.querySelectorAllInputs()
       .map(input => this.validate(input))
       .filter(e => e.errors.length);
-    await this.getParentElement().requestUpdate();
+    this.getParentElement().requestUpdate();
     return inputs;
   }
 
@@ -54,7 +55,6 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
       this: HTMLInputElement,
       event: { target: HTMLInputElement }
     ) {
-      let value = this.value;
       const hasMultipleBindings = [
         ...((self
           .getFormElement()
@@ -63,6 +63,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
           NodeListOf<Element>
         >).values()
       ].length;
+      let value = this.value;
       if (
         hasMultipleBindings === 1 &&
         (this.type === 'checkbox' || this.type === 'radio')
@@ -87,9 +88,11 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
       const { errors } = self.validate(this);
       if (errors.length) {
         form.invalid = true;
+        form.valid = false;
       } else {
         self.errors[this.name] = {} as any;
         form.invalid = false;
+        form.valid = true;
         self.setValue(this.name, value);
       }
       parentElement.requestUpdate();
@@ -102,7 +105,11 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
       `form[name="${this.options.name}"]`
     ) as HTMLFormElement;
     if (!form) {
-      throw new Error(`Form element with name "${this.options.name}" not present inside ${this.getParentElement().outerHTML} component`);
+      throw new Error(
+        `Form element with name "${this.options.name}" not present inside ${
+          this.getParentElement().outerHTML
+        } component`
+      );
     }
     form.addEventListener('submit', (e: Event) => {
       e.preventDefault();
@@ -119,13 +126,19 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
       >).values()
     ]
       .filter(el => this.isInputPresentOnStage(el))
-      .filter(el => !!el.name)
-      .map((el: HTMLInputElement) => {
-        el[`on${this.options.strategy}`] = this.updateValueAndValidityOnEvent(
-          el[`on${this.options.strategy}`] || function() {}
-        );
-        return el;
-      });
+      .filter(el => !!el.name);
+  }
+
+  public mapEventToInputs(inputs: HTMLElement[] = []) {
+    return inputs.map((el: HTMLInputElement) => {
+      if (!el[`on${this.options.strategy}`]) {
+        el[`on${this.options.strategy}`] = function() {};
+      }
+      el[`on${this.options.strategy}`] = this.updateValueAndValidityOnEvent(
+        el[`on${this.options.strategy}`]
+      );
+      return el;
+    });
   }
 
   public isInputPresentOnStage(input: HTMLInputElement) {
@@ -194,7 +207,6 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
       object[key] = {};
       return object;
     }, {}) as T;
-    this.setFormValidity();
   }
 
   public get value() {

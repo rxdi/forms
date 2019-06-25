@@ -1,17 +1,11 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const rxjs_1 = require("rxjs");
 class FormGroup {
     constructor(value, errors) {
         this.validators = new Map();
+        this.valid = true;
+        this.invalid = false;
         this.errors = {};
         this._valueChanges = new rxjs_1.BehaviorSubject({});
         this.errorMap = new WeakMap();
@@ -35,23 +29,22 @@ class FormGroup {
         return this._valueChanges.asObservable();
     }
     updateValueAndValidity() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const inputs = this.querySelectorAllInputs()
-                .map(input => this.validate(input))
-                .filter(e => e.errors.length);
-            yield this.getParentElement().requestUpdate();
-            return inputs;
-        });
+        this.resetErrors();
+        const inputs = this.querySelectorAllInputs()
+            .map(input => this.validate(input))
+            .filter(e => e.errors.length);
+        this.getParentElement().requestUpdate();
+        return inputs;
     }
     updateValueAndValidityOnEvent(method) {
         const self = this;
         return function (event) {
-            let value = this.value;
             const hasMultipleBindings = [
                 ...self
                     .getFormElement()
                     .querySelectorAll(`input[name="${this.name}"]`).values()
             ].length;
+            let value = this.value;
             if (hasMultipleBindings === 1 &&
                 (this.type === 'checkbox' || this.type === 'radio')) {
                 value = String(this.checked);
@@ -70,10 +63,12 @@ class FormGroup {
             const { errors } = self.validate(this);
             if (errors.length) {
                 form.invalid = true;
+                form.valid = false;
             }
             else {
                 self.errors[this.name] = {};
                 form.invalid = false;
+                form.valid = true;
                 self.setValue(this.name, value);
             }
             parentElement.requestUpdate();
@@ -96,9 +91,14 @@ class FormGroup {
             ...this.form.querySelectorAll('input').values()
         ]
             .filter(el => this.isInputPresentOnStage(el))
-            .filter(el => !!el.name)
-            .map((el) => {
-            el[`on${this.options.strategy}`] = this.updateValueAndValidityOnEvent(el[`on${this.options.strategy}`] || function () { });
+            .filter(el => !!el.name);
+    }
+    mapEventToInputs(inputs = []) {
+        return inputs.map((el) => {
+            if (!el[`on${this.options.strategy}`]) {
+                el[`on${this.options.strategy}`] = function () { };
+            }
+            el[`on${this.options.strategy}`] = this.updateValueAndValidityOnEvent(el[`on${this.options.strategy}`]);
             return el;
         });
     }
@@ -156,7 +156,6 @@ class FormGroup {
             object[key] = {};
             return object;
         }, {});
-        this.setFormValidity();
     }
     get value() {
         return this._valueChanges.getValue();
