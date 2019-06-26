@@ -2,25 +2,29 @@
 
 
 
+
+import { BehaviorSubject as BS, Observable as O, Subscription as S } from 'rxjs';
+
+type OBS<T> = (o: $Observable<T>) => void | Function;
+type FN<T> = (a: T) => void;
+
 export class $Subscription<T> {
-  o: Map<Function, (a: T) => void> = new Map();
+  o: Map<Function, FN<T>> = new Map();
 
   unsubscribe() {
     [...this.o.values()].forEach(v => this.o.delete(v));
   }
 }
 
-type FN<T> = (o: $Observable<T>) => void | Function;
-
 export class $Observable<T> extends $Subscription<T> {
-  fn: FN<T>;
+  fn: OBS<T>;
   init: boolean = true;
-  constructor(fn?: FN<T>) {
+  constructor(fn?: OBS<T>) {
     super();
     this.fn = fn;
   }
 
-  subscribe(c: (a: T) => void) {
+  subscribe(c: FN<T>) {
     this.o.set(c, c);
     if (typeof this.fn === 'function' && this.init) {
       this.fn(this);
@@ -49,12 +53,16 @@ class $BehaviorSubject<T> extends $Observable<T> {
       super(v as any);
     }
     super(null);
+    this.setValue(v);
+  }
+
+  private setValue(v: T) {
     this.v = v;
   }
 
   next(s: T) {
-    this.v = s;
-    [...this.o.values()].forEach(f => f(s));
+    this.setValue(s);
+    super.next(s);
   }
 
   getValue() {
@@ -100,6 +108,6 @@ export function Subscription<T>(init: T): void {
     return new S(init);
 };
 
-export interface BehaviorSubject<T> extends $BehaviorSubject<T> {}
-export interface Observable<T> extends $Observable<T> {}
-export interface Subscription<T> extends $Subscription<T> {}
+export interface BehaviorSubject<T> extends BS<T> {}
+export interface Observable<T> extends O<T> {}
+export interface Subscription extends S {}

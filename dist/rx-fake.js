@@ -41,11 +41,14 @@ class $BehaviorSubject extends $Observable {
             super(v);
         }
         super(null);
+        this.setValue(v);
+    }
+    setValue(v) {
         this.v = v;
     }
     next(s) {
-        this.v = s;
-        [...this.o.values()].forEach(f => f(s));
+        this.setValue(s);
+        super.next(s);
     }
     getValue() {
         return this.v;
