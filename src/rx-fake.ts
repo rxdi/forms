@@ -46,7 +46,7 @@ export class $Observable<T> extends $Subscription<T> {
   }
 }
 
-class $BehaviorSubject<T> extends $Observable<T> {
+export class $BehaviorSubject<T> extends $Observable<T> {
   v: T;
   constructor(v: T) {
     if (typeof v === 'function') {

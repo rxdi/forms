@@ -7,10 +7,32 @@ class FormGroup {
         this.valid = true;
         this.invalid = false;
         this.errors = {};
-        this.errorMap = new WeakMap();
+        this.errorMap = new Map();
         this.inputs = new Map();
         this.options = {};
         this._valueChanges = new rx_fake_1.BehaviorSubject(value);
+    }
+    prepareValues() {
+        Object.keys(this.value).forEach(v => {
+            const value = this.value[v];
+            this.errors[v] = this.errors[v] || {};
+            if (value.constructor === Array) {
+                if (value[1].constructor === Array) {
+                    value[1].forEach(val => {
+                        const oldValidators = this.validators.get(v) || [];
+                        this.validators.set(v, [...oldValidators, val]);
+                    });
+                }
+                if (value[0].constructor === String ||
+                    value[0].constructor === Number ||
+                    value[0].constructor === Boolean) {
+                    this.value[v] = value[0];
+                }
+                else {
+                    throw new Error(`Input value must be of type 'string', 'boolean' or 'number'`);
+                }
+            }
+        });
     }
     setParentElement(parent) {
         this.parentElement = parent;
@@ -30,6 +52,10 @@ class FormGroup {
     updateValueAndValidity() {
         this.resetErrors();
         const inputs = this.querySelectorAllInputs()
+            .map(i => {
+            i.setCustomValidity('');
+            return i;
+        })
             .map(input => this.validate(input))
             .filter(e => e.errors.length);
         this.getParentElement().requestUpdate();
@@ -54,23 +80,28 @@ class FormGroup {
                 ].forEach(el => (el.checked = false));
                 this.checked = true;
             }
-            const parentElement = self.getParentElement();
-            const form = self.getFormElement();
             self.resetErrors();
-            const { errors } = self.validate(this);
-            if (errors.length) {
-                form.invalid = true;
-                form.valid = false;
-            }
-            else {
-                self.errors[this.name] = {};
-                form.invalid = false;
-                form.valid = true;
+            const isValid = self.applyValidationContext(self.validate(this));
+            if (isValid) {
                 self.setValue(this.name, value);
             }
-            parentElement.requestUpdate();
-            return method.call(parentElement, event);
+            self.parentElement.requestUpdate();
+            return method.call(self.parentElement, event);
         };
+    }
+    applyValidationContext({ errors, element }) {
+        const form = this.getFormElement();
+        if (errors.length) {
+            this.invalid = form.invalid = true;
+            this.valid = form.valid = false;
+            return false;
+        }
+        else {
+            this.errors[element.name] = {};
+            this.invalid = form.invalid = false;
+            this.valid = form.valid = true;
+            return true;
+        }
     }
     querySelectForm(shadowRoot) {
         const form = shadowRoot.querySelector(`form[name="${this.options.name}"]`);
@@ -92,10 +123,11 @@ class FormGroup {
     }
     mapEventToInputs(inputs = []) {
         return inputs.map((el) => {
-            if (!el[`on${this.options.strategy}`]) {
-                el[`on${this.options.strategy}`] = function () { };
+            const strategy = `on${this.options.strategy}`;
+            if (!el[strategy]) {
+                el[strategy] = function () { };
             }
-            el[`on${this.options.strategy}`] = this.updateValueAndValidityOnEvent(el[`on${this.options.strategy}`]);
+            el[strategy] = this.updateValueAndValidityOnEvent(el[strategy]);
             return el;
         });
     }
@@ -106,29 +138,31 @@ class FormGroup {
         }
         return isInputPresent.length;
     }
-    validate(input) {
-        const validators = this.validators.get(input.name);
+    validate(element) {
+        const validators = this.validators.get(element.name);
         let errors = [];
         if (validators && validators.length) {
             errors = validators
                 .map(v => {
-                this.errors[input.name] = this.errors[input.name] || {};
-                const error = v.bind(this.getParentElement())(input);
+                this.errors[element.name] = this.errors[element.name] || {};
+                const error = v.bind(this.getParentElement())(element);
                 if (error && error.key) {
-                    this.errors[input.name][error.key] = error.message;
+                    this.errors[element.name][error.key] = error.message;
                     this.errorMap.set(v, error.key);
                     return { key: error.key, message: error.message };
                 }
                 else if (this.errorMap.has(v)) {
-                    delete this.errors[input.name][this.errorMap.get(v)];
+                    delete this.errors[element.name][this.errorMap.get(v)];
                 }
             })
                 .filter(i => !!i);
         }
         if (!errors.length) {
-            return { errors: [] };
+            element.setCustomValidity('');
+            return { errors: [], element };
         }
-        return { element: input, errors };
+        element.setCustomValidity(errors[0].message);
+        return { element, errors };
     }
     get(name) {
         return this.inputs.get(name);
@@ -153,6 +187,7 @@ class FormGroup {
             object[key] = {};
             return object;
         }, {});
+        this.errorMap.clear();
     }
     get value() {
         return this._valueChanges.getValue();
@@ -160,12 +195,14 @@ class FormGroup {
     set value(value) {
         this._valueChanges.next(value);
     }
-    // public unsubscribe() {
-    //   this._valueChanges.unsubscribe();
-    // }
-    // public subscribe() {
-    //   this._valueChanges.subscribe();
-    // }
+    unsubscribe() {
+        this.reset();
+        this.updateValueAndValidity();
+        // this._valueChanges.unsubscribe();
+    }
+    subscribe() {
+        this._valueChanges.subscribe();
+    }
     getValue(name) {
         return this.value[name];
     }

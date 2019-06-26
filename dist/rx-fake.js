@@ -54,6 +54,7 @@ class $BehaviorSubject extends $Observable {
         return this.v;
     }
 }
+exports.$BehaviorSubject = $BehaviorSubject;
 function behaviorOrFake() {
     try {
         return require('rxjs').BehaviorSubject;

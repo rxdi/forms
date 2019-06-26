@@ -13,6 +13,13 @@ export declare class $Observable<T> extends $Subscription<T> {
     complete(): void;
     next(s: T): void;
 }
+export declare class $BehaviorSubject<T> extends $Observable<T> {
+    v: T;
+    constructor(v: T);
+    private setValue;
+    next(s: T): void;
+    getValue(): T;
+}
 export declare function noop(): void;
 export declare function BehaviorSubject<T>(init: T): void;
 export declare function Observable<T>(init: T): void;

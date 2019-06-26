@@ -8,3 +8,8 @@ export interface FormOptions {
 export interface FormInputOptions {
   [key: string]: [string, Function[]];
 }
+
+export interface ErrorObject {
+  element: HTMLInputElement;
+  errors: any[];
+}

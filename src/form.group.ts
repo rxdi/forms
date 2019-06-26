@@ -1,4 +1,4 @@
-import { FormInputOptions, FormOptions } from './form.tokens';
+import { FormInputOptions, FormOptions, ErrorObject } from './form.tokens';
 import { LitElement } from '@rxdi/lit-html';
 import { BehaviorSubject } from './rx-fake';
 
@@ -10,7 +10,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
 
   private readonly _valueChanges: BehaviorSubject<T>;
   private form: HTMLFormElement;
-  private errorMap = new WeakMap();
+  private errorMap = new Map();
   private inputs: Map<keyof T, HTMLInputElement> = new Map();
   private options: FormOptions = {} as FormOptions;
   private parentElement: LitElement;
@@ -19,29 +19,59 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     this._valueChanges = new BehaviorSubject<T>(value);
   }
 
-  setParentElement(parent: LitElement) {
+  public prepareValues() {
+    Object.keys(this.value).forEach(v => {
+      const value = this.value[v];
+      this.errors[v] = this.errors[v] || {};
+      if (value.constructor === Array) {
+        if (value[1].constructor === Array) {
+          value[1].forEach(val => {
+            const oldValidators = this.validators.get(v) || [];
+            this.validators.set(v, [...oldValidators, val]);
+          });
+        }
+        if (
+          value[0].constructor === String ||
+          value[0].constructor === Number ||
+          value[0].constructor === Boolean
+        ) {
+          (this.value[v] as any) = value[0];
+        } else {
+          throw new Error(
+            `Input value must be of type 'string', 'boolean' or 'number'`
+          );
+        }
+      }
+    });
+  }
+
+  public setParentElement(parent: LitElement) {
     this.parentElement = parent;
   }
 
-  getParentElement() {
+  public getParentElement() {
     return this.parentElement;
   }
 
-  setOptions(options: FormOptions) {
+  public setOptions(options: FormOptions) {
     Object.assign(this.options, options);
   }
 
-  getOptions() {
+  public getOptions() {
     return this.options;
   }
 
-  get valueChanges() {
+  public get valueChanges() {
     return this._valueChanges;
   }
 
-  updateValueAndValidity() {
+  public updateValueAndValidity() {
     this.resetErrors();
     const inputs = this.querySelectorAllInputs()
+      .map(i => {
+        i.setCustomValidity('');
+        return i;
+      })
       .map(input => this.validate(input))
       .filter(e => e.errors.length);
     this.getParentElement().requestUpdate();
@@ -78,22 +108,28 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
         ].forEach(el => (el.checked = false));
         this.checked = true;
       }
-      const parentElement = self.getParentElement();
-      const form = self.getFormElement();
       self.resetErrors();
-      const { errors } = self.validate(this);
-      if (errors.length) {
-        form.invalid = true;
-        form.valid = false;
-      } else {
-        self.errors[this.name] = {} as E;
-        form.invalid = false;
-        form.valid = true;
+      const isValid = self.applyValidationContext(self.validate(this));
+      if (isValid) {
         self.setValue(this.name, value);
       }
-      parentElement.requestUpdate();
-      return method.call(parentElement, event);
+      self.parentElement.requestUpdate();
+      return method.call(self.parentElement, event);
     };
+  }
+
+  applyValidationContext({ errors, element }: ErrorObject) {
+    const form = this.getFormElement();
+    if (errors.length) {
+      this.invalid = form.invalid = true;
+      this.valid = form.valid = false;
+      return false;
+    } else {
+      this.errors[element.name] = {} as E;
+      this.invalid = form.invalid = false;
+      this.valid = form.valid = true;
+      return true;
+    }
   }
 
   public querySelectForm(shadowRoot: HTMLElement): HTMLFormElement {
@@ -127,12 +163,11 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
 
   public mapEventToInputs(inputs: HTMLElement[] = []) {
     return inputs.map((el: HTMLInputElement) => {
-      if (!el[`on${this.options.strategy}`]) {
-        el[`on${this.options.strategy}`] = function() {};
+      const strategy = `on${this.options.strategy}`;
+      if (!el[strategy]) {
+        el[strategy] = function() {};
       }
-      el[`on${this.options.strategy}`] = this.updateValueAndValidityOnEvent(
-        el[`on${this.options.strategy}`]
-      );
+      el[strategy] = this.updateValueAndValidityOnEvent(el[strategy]);
       return el;
     });
   }
@@ -151,28 +186,30 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     return isInputPresent.length;
   }
 
-  public validate(input: HTMLInputElement) {
-    const validators = this.validators.get(input.name);
+  public validate(element: HTMLInputElement): ErrorObject {
+    const validators = this.validators.get(element.name);
     let errors = [];
     if (validators && validators.length) {
       errors = validators
         .map(v => {
-          this.errors[input.name] = this.errors[input.name] || {};
-          const error = v.bind(this.getParentElement())(input);
+          this.errors[element.name] = this.errors[element.name] || {};
+          const error = v.bind(this.getParentElement())(element);
           if (error && error.key) {
-            this.errors[input.name][error.key] = error.message;
+            this.errors[element.name][error.key] = error.message;
             this.errorMap.set(v, error.key);
             return { key: error.key, message: error.message };
           } else if (this.errorMap.has(v)) {
-            delete this.errors[input.name][this.errorMap.get(v)];
+            delete this.errors[element.name][this.errorMap.get(v)];
           }
         })
         .filter(i => !!i);
     }
     if (!errors.length) {
-      return { errors: [] };
+      element.setCustomValidity('');
+      return { errors: [], element };
     }
-    return { element: input, errors };
+    element.setCustomValidity(errors[0].message);
+    return { element, errors };
   }
 
   public get(name: keyof T) {
@@ -203,6 +240,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
       object[key] = {};
       return object;
     }, {}) as T;
+    this.errorMap.clear();
   }
 
   public get value() {
@@ -213,12 +251,14 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     this._valueChanges.next(value);
   }
 
-  // public unsubscribe() {
-  //   this._valueChanges.unsubscribe();
-  // }
-  // public subscribe() {
-  //   this._valueChanges.subscribe();
-  // }
+  public unsubscribe() {
+    this.reset();
+    this.updateValueAndValidity();
+    // this._valueChanges.unsubscribe();
+  }
+  public subscribe() {
+    this._valueChanges.subscribe();
+  }
 
   public getValue(name: keyof T): T[keyof T] {
     return this.value[name];

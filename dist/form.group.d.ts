@@ -1,4 +1,4 @@
-import { FormInputOptions, FormOptions } from './form.tokens';
+import { FormInputOptions, FormOptions, ErrorObject } from './form.tokens';
 import { LitElement } from '@rxdi/lit-html';
 import { BehaviorSubject } from './rx-fake';
 export declare class FormGroup<T = FormInputOptions, E = {
@@ -15,30 +15,20 @@ export declare class FormGroup<T = FormInputOptions, E = {
     private options;
     private parentElement;
     constructor(value?: T, errors?: E);
+    prepareValues(): void;
     setParentElement(parent: LitElement): void;
     getParentElement(): LitElement;
     setOptions(options: FormOptions): void;
     getOptions(): FormOptions;
     readonly valueChanges: BehaviorSubject<T>;
-    updateValueAndValidity(): ({
-        errors: any[];
-        element?: undefined;
-    } | {
-        element: HTMLInputElement;
-        errors: any[];
-    })[];
+    updateValueAndValidity(): ErrorObject[];
     private updateValueAndValidityOnEvent;
+    applyValidationContext({ errors, element }: ErrorObject): boolean;
     querySelectForm(shadowRoot: HTMLElement): HTMLFormElement;
     querySelectorAllInputs(): HTMLInputElement[];
     mapEventToInputs(inputs?: HTMLElement[]): HTMLInputElement[];
     isInputPresentOnStage(input: HTMLInputElement): number;
-    validate(input: HTMLInputElement): {
-        errors: any[];
-        element?: undefined;
-    } | {
-        element: HTMLInputElement;
-        errors: any[];
-    };
+    validate(element: HTMLInputElement): ErrorObject;
     get(name: keyof T): HTMLInputElement;
     getError(inputName: keyof T, errorKey: keyof E): never;
     hasError(inputName: keyof T, errorKey: keyof E): boolean;
@@ -46,6 +36,8 @@ export declare class FormGroup<T = FormInputOptions, E = {
     setFormValidity(validity?: boolean): void;
     resetErrors(): void;
     value: T;
+    unsubscribe(): void;
+    subscribe(): void;
     getValue(name: keyof T): T[keyof T];
     setValue(name: string, value: string | boolean | number): T;
     setFormValue(value: T): void;
