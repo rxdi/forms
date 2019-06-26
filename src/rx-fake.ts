@@ -68,13 +68,17 @@ export class $BehaviorSubject<T> extends $Observable<T> {
   getValue() {
     return this.v;
   }
+
+  asObservable() {
+    return this;
+  }
 }
 
 function behaviorOrFake<T>(): void {
     try {
         return require('rxjs').BehaviorSubject;
     } catch (e) {}
-    return BehaviorSubject as any;
+    return $BehaviorSubject as any;
 }
 
 function observableOrFake<T>(): void {
@@ -94,18 +98,18 @@ function subscriptionOrFake<T>(): void {
 export function noop() {}
 
 export function BehaviorSubject<T>(init: T): void {
-    const BS: any = behaviorOrFake();
-    return new BS(init);
+    const b: any = behaviorOrFake();
+    return new b(init);
 };
 
-export function Observable<T>(init: T): void {
-    const O: any = observableOrFake();
-    return new O(init);
+export function Observable<T>(fn?: OBS<T>): void {
+    const o: any = observableOrFake();
+    return new o(fn);
 };
 
-export function Subscription<T>(init: T): void {
-    const S: any = subscriptionOrFake();
-    return new S(init);
+export function Subscription<T>(): void {
+    const s: any = subscriptionOrFake();
+    return new s();
 };
 
 export interface BehaviorSubject<T> extends BS<T> {}

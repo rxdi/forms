@@ -53,6 +53,9 @@ class $BehaviorSubject extends $Observable {
     getValue() {
         return this.v;
     }
+    asObservable() {
+        return this;
+    }
 }
 exports.$BehaviorSubject = $BehaviorSubject;
 function behaviorOrFake() {
@@ -60,7 +63,7 @@ function behaviorOrFake() {
         return require('rxjs').BehaviorSubject;
     }
     catch (e) { }
-    return BehaviorSubject;
+    return $BehaviorSubject;
 }
 function observableOrFake() {
     try {
@@ -79,20 +82,20 @@ function subscriptionOrFake() {
 function noop() { }
 exports.noop = noop;
 function BehaviorSubject(init) {
-    const BS = behaviorOrFake();
-    return new BS(init);
+    const b = behaviorOrFake();
+    return new b(init);
 }
 exports.BehaviorSubject = BehaviorSubject;
 ;
-function Observable(init) {
-    const O = observableOrFake();
-    return new O(init);
+function Observable(fn) {
+    const o = observableOrFake();
+    return new o(fn);
 }
 exports.Observable = Observable;
 ;
-function Subscription(init) {
-    const S = subscriptionOrFake();
-    return new S(init);
+function Subscription() {
+    const s = subscriptionOrFake();
+    return new s();
 }
 exports.Subscription = Subscription;
 ;

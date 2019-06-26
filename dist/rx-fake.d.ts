@@ -19,11 +19,12 @@ export declare class $BehaviorSubject<T> extends $Observable<T> {
     private setValue;
     next(s: T): void;
     getValue(): T;
+    asObservable(): this;
 }
 export declare function noop(): void;
 export declare function BehaviorSubject<T>(init: T): void;
-export declare function Observable<T>(init: T): void;
-export declare function Subscription<T>(init: T): void;
+export declare function Observable<T>(fn?: OBS<T>): void;
+export declare function Subscription<T>(): void;
 export interface BehaviorSubject<T> extends BS<T> {
 }
 export interface Observable<T> extends O<T> {

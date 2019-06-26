@@ -62,7 +62,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
   }
 
   public get valueChanges() {
-    return this._valueChanges;
+    return this._valueChanges.asObservable();
   }
 
   public updateValueAndValidity() {

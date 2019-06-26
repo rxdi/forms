@@ -1,6 +1,5 @@
 import { FormInputOptions, FormOptions, ErrorObject } from './form.tokens';
 import { LitElement } from '@rxdi/lit-html';
-import { BehaviorSubject } from './rx-fake';
 export declare class FormGroup<T = FormInputOptions, E = {
     [key: string]: never;
 }> {
@@ -20,7 +19,7 @@ export declare class FormGroup<T = FormInputOptions, E = {
     getParentElement(): LitElement;
     setOptions(options: FormOptions): void;
     getOptions(): FormOptions;
-    readonly valueChanges: BehaviorSubject<T>;
+    readonly valueChanges: import("rxjs").Observable<T>;
     updateValueAndValidity(): ErrorObject[];
     private updateValueAndValidityOnEvent;
     applyValidationContext({ errors, element }: ErrorObject): boolean;

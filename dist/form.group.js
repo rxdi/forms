@@ -47,7 +47,7 @@ class FormGroup {
         return this.options;
     }
     get valueChanges() {
-        return this._valueChanges;
+        return this._valueChanges.asObservable();
     }
     updateValueAndValidity() {
         this.resetErrors();
