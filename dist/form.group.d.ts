@@ -14,16 +14,16 @@ export declare class FormGroup<T = FormInputOptions, E = {
     private options;
     private parentElement;
     constructor(value?: T, errors?: E);
-    prepareValues(): void;
-    setParentElement(parent: LitElement): void;
+    prepareValues(): this;
+    setParentElement(parent: LitElement): this;
     getParentElement(): LitElement;
-    setOptions(options: FormOptions): void;
+    setOptions(options: FormOptions): this;
     getOptions(): FormOptions;
     readonly valueChanges: import("rxjs").Observable<T>;
     updateValueAndValidity(): ErrorObject[];
     private updateValueAndValidityOnEvent;
     applyValidationContext({ errors, element }: ErrorObject): boolean;
-    querySelectForm(shadowRoot: HTMLElement): HTMLFormElement;
+    querySelectForm(shadowRoot: HTMLElement | ShadowRoot): HTMLFormElement;
     querySelectorAllInputs(): HTMLInputElement[];
     mapEventToInputs(inputs?: HTMLElement[]): HTMLInputElement[];
     isInputPresentOnStage(input: HTMLInputElement): number;
@@ -40,7 +40,7 @@ export declare class FormGroup<T = FormInputOptions, E = {
     getValue(name: keyof T): T[keyof T];
     setValue(name: string, value: string | boolean | number): T;
     setFormValue(value: T): void;
-    setElement(form: HTMLFormElement): void;
+    setFormElement(form: HTMLFormElement): this;
     setInputs(inputs: HTMLInputElement[]): void;
     getFormElement(): HTMLFormElement;
 }

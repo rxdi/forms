@@ -1,4 +1,3 @@
-import { UpdatingElement } from '@rxdi/lit-html';
 import { FormOptions } from './form.tokens';
 import { FormGroup } from './form.group';
 import { noop } from './rx-fake';
@@ -21,17 +20,16 @@ export function Form(
       if (!(this[name] instanceof FormGroup)) {
         throw new Error('Value provided is not an instance of FormGroup!');
       }
-      const form = this[name] as FormGroup;
-      form.prepareValues();
-      form.setOptions(options);
+      (this[name] as FormGroup).setOptions(options).prepareValues();
       return Connect.call(this);
     };
 
     clazz.constructor.prototype.firstUpdated = function() {
       const form = this[name] as FormGroup;
-      form.setParentElement(this);
-      form.setElement(form.querySelectForm(this.shadowRoot));
-      form.setInputs(form.mapEventToInputs(form.querySelectorAllInputs()));
+      form
+        .setParentElement(this)
+        .setFormElement(form.querySelectForm(this.shadowRoot || this))
+        .setInputs(form.mapEventToInputs(form.querySelectorAllInputs()));
       return UpdateFirst.call(this);
     };
 

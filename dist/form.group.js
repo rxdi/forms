@@ -33,15 +33,18 @@ class FormGroup {
                 }
             }
         });
+        return this;
     }
     setParentElement(parent) {
         this.parentElement = parent;
+        return this;
     }
     getParentElement() {
         return this.parentElement;
     }
     setOptions(options) {
-        Object.assign(this.options, options);
+        this.options = options;
+        return this;
     }
     getOptions() {
         return this.options;
@@ -215,8 +218,9 @@ class FormGroup {
     setFormValue(value) {
         this.value = value;
     }
-    setElement(form) {
+    setFormElement(form) {
         this.form = form;
+        return this;
     }
     setInputs(inputs) {
         this.inputs = new Map(inputs.map(e => [e.name, e]));

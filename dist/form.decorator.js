@@ -16,16 +16,15 @@ function Form(options = {
             if (!(this[name] instanceof form_group_1.FormGroup)) {
                 throw new Error('Value provided is not an instance of FormGroup!');
             }
-            const form = this[name];
-            form.prepareValues();
-            form.setOptions(options);
+            this[name].setOptions(options).prepareValues();
             return Connect.call(this);
         };
         clazz.constructor.prototype.firstUpdated = function () {
             const form = this[name];
-            form.setParentElement(this);
-            form.setElement(form.querySelectForm(this.shadowRoot));
-            form.setInputs(form.mapEventToInputs(form.querySelectorAllInputs()));
+            form
+                .setParentElement(this)
+                .setFormElement(form.querySelectForm(this.shadowRoot || this))
+                .setInputs(form.mapEventToInputs(form.querySelectorAllInputs()));
             return UpdateFirst.call(this);
         };
         clazz.constructor.prototype.disconnectedCallback = function () {

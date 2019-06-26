@@ -43,10 +43,12 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
         }
       }
     });
+    return this;
   }
 
   public setParentElement(parent: LitElement) {
     this.parentElement = parent;
+    return this;
   }
 
   public getParentElement() {
@@ -54,7 +56,8 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
   }
 
   public setOptions(options: FormOptions) {
-    Object.assign(this.options, options);
+    this.options = options;
+    return this;
   }
 
   public getOptions() {
@@ -132,7 +135,9 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     }
   }
 
-  public querySelectForm(shadowRoot: HTMLElement): HTMLFormElement {
+  public querySelectForm(
+    shadowRoot: HTMLElement | ShadowRoot
+  ): HTMLFormElement {
     const form = shadowRoot.querySelector(
       `form[name="${this.options.name}"]`
     ) as HTMLFormElement;
@@ -275,8 +280,9 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     this.value = value;
   }
 
-  public setElement(form: HTMLFormElement) {
+  public setFormElement(form: HTMLFormElement) {
     this.form = form;
+    return this;
   }
 
   public setInputs(inputs: HTMLInputElement[]) {
