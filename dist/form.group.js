@@ -12,6 +12,9 @@ class FormGroup {
         this.options = {};
         this._valueChanges = new rx_fake_1.BehaviorSubject(value);
     }
+    init() {
+        this.setFormElement(this.querySelectForm(this.parentElement.shadowRoot || this.parentElement)).setInputs(this.mapEventToInputs(this.querySelectorAllInputs()));
+    }
     prepareValues() {
         Object.keys(this.value).forEach(v => {
             const value = this.value[v];

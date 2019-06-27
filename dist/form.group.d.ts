@@ -14,6 +14,7 @@ export declare class FormGroup<T = FormInputOptions, E = {
     private options;
     private parentElement;
     constructor(value?: T, errors?: E);
+    init(): void;
     prepareValues(): this;
     setParentElement(parent: LitElement): this;
     getParentElement(): LitElement;

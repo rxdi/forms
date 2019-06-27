@@ -25,11 +25,7 @@ export function Form(
     };
 
     clazz.constructor.prototype.firstUpdated = function() {
-      const form = this[name] as FormGroup;
-      form
-        .setParentElement(this)
-        .setFormElement(form.querySelectForm(this.shadowRoot || this))
-        .setInputs(form.mapEventToInputs(form.querySelectorAllInputs()));
+      (this[name] as FormGroup).setParentElement(this).init();
       return UpdateFirst.call(this);
     };
 

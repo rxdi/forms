@@ -19,6 +19,12 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     this._valueChanges = new BehaviorSubject<T>(value);
   }
 
+  public init() {
+    this.setFormElement(
+      this.querySelectForm(this.parentElement.shadowRoot || this.parentElement)
+    ).setInputs(this.mapEventToInputs(this.querySelectorAllInputs()));
+  }
+
   public prepareValues() {
     Object.keys(this.value).forEach(v => {
       const value = this.value[v];

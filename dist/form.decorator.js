@@ -20,11 +20,7 @@ function Form(options = {
             return Connect.call(this);
         };
         clazz.constructor.prototype.firstUpdated = function () {
-            const form = this[name];
-            form
-                .setParentElement(this)
-                .setFormElement(form.querySelectForm(this.shadowRoot || this))
-                .setInputs(form.mapEventToInputs(form.querySelectorAllInputs()));
+            this[name].setParentElement(this).init();
             return UpdateFirst.call(this);
         };
         clazz.constructor.prototype.disconnectedCallback = function () {
