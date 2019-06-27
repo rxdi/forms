@@ -20,12 +20,15 @@ export function Form(
       if (!(this[name] instanceof FormGroup)) {
         throw new Error('Value provided is not an instance of FormGroup!');
       }
-      (this[name] as FormGroup).setOptions(options).prepareValues();
+      (this[name] as FormGroup)
+        .setParentElement(this)
+        .setOptions(options)
+        .prepareValues();
       return Connect.call(this);
     };
 
     clazz.constructor.prototype.firstUpdated = function() {
-      (this[name] as FormGroup).setParentElement(this).init();
+      (this[name] as FormGroup).init();
       return UpdateFirst.call(this);
     };
 

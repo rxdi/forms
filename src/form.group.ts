@@ -1,4 +1,9 @@
-import { FormInputOptions, FormOptions, ErrorObject } from './form.tokens';
+import {
+  FormInputOptions,
+  FormOptions,
+  ErrorObject,
+  InputValidityState
+} from './form.tokens';
 import { LitElement } from '@rxdi/lit-html';
 import { BehaviorSubject } from './rx-fake';
 
@@ -30,7 +35,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
       const value = this.value[v];
       this.errors[v] = this.errors[v] || {};
       if (value.constructor === Array) {
-        if (value[1].constructor === Array) {
+        if (value[1] && value[1].constructor === Array) {
           value[1].forEach(val => {
             const oldValidators = this.validators.get(v) || [];
             this.validators.set(v, [...oldValidators, val]);
@@ -119,9 +124,14 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
       }
       self.resetErrors();
       const isValid = self.applyValidationContext(self.validate(this));
-      if (isValid) {
-        self.setValue(this.name, value);
+      if (self.options.strict) {
+        if (isValid) {
+          self.setValue(this.name, value);
+        }
+        self.parentElement.requestUpdate();
+        return method.call(self.parentElement, event);
       }
+      self.setValue(this.name, value);
       self.parentElement.requestUpdate();
       return method.call(self.parentElement, event);
     };
@@ -198,29 +208,46 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
   }
 
   public validate(element: HTMLInputElement): ErrorObject {
-    const validators = this.validators.get(element.name);
     let errors = [];
-    if (validators && validators.length) {
-      errors = validators
-        .map(v => {
-          this.errors[element.name] = this.errors[element.name] || {};
-          const error = v.bind(this.getParentElement())(element);
-          if (error && error.key) {
-            this.errors[element.name][error.key] = error.message;
-            this.errorMap.set(v, error.key);
-            return { key: error.key, message: error.message };
-          } else if (this.errorMap.has(v)) {
-            delete this.errors[element.name][this.errorMap.get(v)];
-          }
-        })
-        .filter(i => !!i);
+    element.setCustomValidity('');
+    if (!element.checkValidity()) {
+      return {
+        errors: errors.concat(
+          Object.keys(InputValidityState)
+            .map(key =>
+              element.validity[key]
+                ? { key, message: element.validationMessage }
+                : null
+            )
+            .filter(i => !!i)
+        ),
+        element
+      };
     }
+    errors = this.mapInputErrors(element);
     if (!errors.length) {
-      element.setCustomValidity('');
       return { errors: [], element };
     }
+
+    this.setFormValidity(false);
     element.setCustomValidity(errors[0].message);
     return { element, errors };
+  }
+
+  private mapInputErrors(element: HTMLInputElement) {
+    return (this.validators.get(element.name) || [])
+      .map(v => {
+        this.errors[element.name] = this.errors[element.name] || {};
+        const error = v.bind(this.getParentElement())(element);
+        if (error && error.key) {
+          this.errors[element.name][error.key] = error.message;
+          this.errorMap.set(v, error.key);
+          return { key: error.key, message: error.message };
+        } else if (this.errorMap.has(v)) {
+          delete this.errors[element.name][this.errorMap.get(v)];
+        }
+      })
+      .filter(i => !!i);
   }
 
   public get(name: keyof T) {
@@ -239,6 +266,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     this.form.reset();
     this.resetErrors();
     this.setFormValidity();
+    this.inputs.clear();
   }
 
   public setFormValidity(validity: boolean = true) {

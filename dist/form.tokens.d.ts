@@ -3,11 +3,30 @@ export interface FormOptions {
     name: string;
     strategy?: FormStrategies;
     multi?: boolean;
+    strict?: boolean;
 }
 export interface FormInputOptions {
     [key: string]: [string, Function[]];
 }
+export interface InputErrorMessage<T = any> {
+    key: T;
+    message: string;
+}
 export interface ErrorObject {
     element: HTMLInputElement;
-    errors: any[];
+    errors: InputErrorMessage[];
 }
+export declare const InputValidityState: {
+    badInput: "badInput";
+    customError: "customError";
+    patternMismatch: "patternMismatch";
+    rangeOverflow: "rangeOverflow";
+    rangeUnderflow: "rangeUnderflow";
+    stepMismatch: "stepMismatch";
+    tooLong: "tooLong";
+    tooShort: "tooShort";
+    typeMismatch: "typeMismatch";
+    valid: "valid";
+    valueMissing: "valueMissing";
+};
+export declare type InputValidityState = keyof typeof InputValidityState;

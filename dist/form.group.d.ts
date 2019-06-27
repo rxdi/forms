@@ -29,6 +29,7 @@ export declare class FormGroup<T = FormInputOptions, E = {
     mapEventToInputs(inputs?: HTMLElement[]): HTMLInputElement[];
     isInputPresentOnStage(input: HTMLInputElement): number;
     validate(element: HTMLInputElement): ErrorObject;
+    private mapInputErrors;
     get(name: keyof T): HTMLInputElement;
     getError(inputName: keyof T, errorKey: keyof E): never;
     hasError(inputName: keyof T, errorKey: keyof E): boolean;

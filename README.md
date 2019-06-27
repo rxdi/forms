@@ -220,3 +220,96 @@ export class LoginComponent extends BaseComponent {
     condition: ''
   });
 ```
+
+
+
+#### Native browser errors
+
+By default this library uses native error messages provided by HTML5 form validation API
+
+
+You can create your error template as follow:
+
+```typescript
+import { html } from '@rxdi/lit-html';
+
+export function InputErrorTemplate(input: HTMLInputElement) {
+  if (input && !input.checkValidity()) {
+    return html`
+      <div>${input.validationMessage}</div>
+    `;
+  }
+  return '';
+}
+```
+
+
+Usage
+
+```html
+<form>
+  <input
+    name="email"
+    type="email"
+    value=${this.form.value.email}
+    class="form-control"
+    placeholder="Email address"
+    required
+    autofocus
+  />
+  ${InputErrorTemplate(this.form.get('email'))}
+</form>
+```
+
+
+
+
+##### Native HTML with JS
+
+```typescript
+
+import { FormGroup } from '@rxdi/forms';
+
+export function EmailValidator(element: HTMLInputElement) {
+  const regex = /^([a-zA-Z0-9_\.\-]+)@([a-zA-Z0-9_\.\-]+)\.([a-zA-Z]{2,5})$/;
+  if (!regex.test(element.value)) {
+    element.classList.add('is-invalid');
+    return {
+      key: 'email-validator',
+      message: 'Email is not valid'
+    };
+  }
+  element.classList.remove('is-invalid');
+}
+
+const form = new FormGroup({
+  email: ['', [EmailValidator]],
+  password: '',
+});
+
+form
+  .setParentElement(document.body)
+  .setOptions({ name: 'my-form' })
+  .prepareValues()
+  .setFormElement(form.querySelectForm(document.body))
+  .setInputs(form.mapEventToInputs(form.querySelectorAllInputs()));
+
+```
+
+```html
+<form name="my-form">
+  <input
+    name="email"
+    type="email"
+    placeholder="Email address"
+    required
+    autofocus
+  />
+  <input
+    name="password"
+    type="password"
+    required
+  />
+</form>
+<script src="./main.ts"></script>
+```

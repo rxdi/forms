@@ -16,11 +16,14 @@ function Form(options = {
             if (!(this[name] instanceof form_group_1.FormGroup)) {
                 throw new Error('Value provided is not an instance of FormGroup!');
             }
-            this[name].setOptions(options).prepareValues();
+            this[name]
+                .setParentElement(this)
+                .setOptions(options)
+                .prepareValues();
             return Connect.call(this);
         };
         clazz.constructor.prototype.firstUpdated = function () {
-            this[name].setParentElement(this).init();
+            this[name].init();
             return UpdateFirst.call(this);
         };
         clazz.constructor.prototype.disconnectedCallback = function () {

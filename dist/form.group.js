@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const form_tokens_1 = require("./form.tokens");
 const rx_fake_1 = require("./rx-fake");
 class FormGroup {
     constructor(value, errors) {
@@ -20,7 +21,7 @@ class FormGroup {
             const value = this.value[v];
             this.errors[v] = this.errors[v] || {};
             if (value.constructor === Array) {
-                if (value[1].constructor === Array) {
+                if (value[1] && value[1].constructor === Array) {
                     value[1].forEach(val => {
                         const oldValidators = this.validators.get(v) || [];
                         this.validators.set(v, [...oldValidators, val]);
@@ -88,9 +89,14 @@ class FormGroup {
             }
             self.resetErrors();
             const isValid = self.applyValidationContext(self.validate(this));
-            if (isValid) {
-                self.setValue(this.name, value);
+            if (self.options.strict) {
+                if (isValid) {
+                    self.setValue(this.name, value);
+                }
+                self.parentElement.requestUpdate();
+                return method.call(self.parentElement, event);
             }
+            self.setValue(this.name, value);
             self.parentElement.requestUpdate();
             return method.call(self.parentElement, event);
         };
@@ -145,30 +151,41 @@ class FormGroup {
         return isInputPresent.length;
     }
     validate(element) {
-        const validators = this.validators.get(element.name);
         let errors = [];
-        if (validators && validators.length) {
-            errors = validators
-                .map(v => {
-                this.errors[element.name] = this.errors[element.name] || {};
-                const error = v.bind(this.getParentElement())(element);
-                if (error && error.key) {
-                    this.errors[element.name][error.key] = error.message;
-                    this.errorMap.set(v, error.key);
-                    return { key: error.key, message: error.message };
-                }
-                else if (this.errorMap.has(v)) {
-                    delete this.errors[element.name][this.errorMap.get(v)];
-                }
-            })
-                .filter(i => !!i);
+        element.setCustomValidity('');
+        if (!element.checkValidity()) {
+            return {
+                errors: errors.concat(Object.keys(form_tokens_1.InputValidityState)
+                    .map(key => element.validity[key]
+                    ? { key, message: element.validationMessage }
+                    : null)
+                    .filter(i => !!i)),
+                element
+            };
         }
+        errors = this.mapInputErrors(element);
         if (!errors.length) {
-            element.setCustomValidity('');
             return { errors: [], element };
         }
+        this.setFormValidity(false);
         element.setCustomValidity(errors[0].message);
         return { element, errors };
+    }
+    mapInputErrors(element) {
+        return (this.validators.get(element.name) || [])
+            .map(v => {
+            this.errors[element.name] = this.errors[element.name] || {};
+            const error = v.bind(this.getParentElement())(element);
+            if (error && error.key) {
+                this.errors[element.name][error.key] = error.message;
+                this.errorMap.set(v, error.key);
+                return { key: error.key, message: error.message };
+            }
+            else if (this.errorMap.has(v)) {
+                delete this.errors[element.name][this.errorMap.get(v)];
+            }
+        })
+            .filter(i => !!i);
     }
     get(name) {
         return this.inputs.get(name);
@@ -183,6 +200,7 @@ class FormGroup {
         this.form.reset();
         this.resetErrors();
         this.setFormValidity();
+        this.inputs.clear();
     }
     setFormValidity(validity = true) {
         this.valid = validity;
