@@ -200,11 +200,7 @@ class FormGroup {
     }
     unsubscribe() {
         this.reset();
-        this.updateValueAndValidity();
-        // this._valueChanges.unsubscribe();
-    }
-    subscribe() {
-        this._valueChanges.subscribe();
+        this._valueChanges.unsubscribe();
     }
     getValue(name) {
         return this.value[name];

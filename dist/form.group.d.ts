@@ -36,7 +36,6 @@ export declare class FormGroup<T = FormInputOptions, E = {
     resetErrors(): void;
     value: T;
     unsubscribe(): void;
-    subscribe(): void;
     getValue(name: keyof T): T[keyof T];
     setValue(name: string, value: string | boolean | number): T;
     setFormValue(value: T): void;

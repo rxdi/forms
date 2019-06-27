@@ -258,11 +258,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
 
   public unsubscribe() {
     this.reset();
-    this.updateValueAndValidity();
-    // this._valueChanges.unsubscribe();
-  }
-  public subscribe() {
-    this._valueChanges.subscribe();
+    this._valueChanges.unsubscribe();
   }
 
   public getValue(name: keyof T): T[keyof T] {
