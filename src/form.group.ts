@@ -126,12 +126,12 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
       const isValid = self.applyValidationContext(self.validate(this));
       if (self.options.strict) {
         if (isValid) {
-          self.setValue(this.name, value);
+          self.setValue(this.name as keyof T, value);
         }
         self.parentElement.requestUpdate();
         return method.call(self.parentElement, event);
       }
-      self.setValue(this.name, value);
+      self.setValue(this.name as keyof T, value);
       self.parentElement.requestUpdate();
       return method.call(self.parentElement, event);
     };
@@ -299,9 +299,9 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     return this.value[name];
   }
 
-  public setValue(name: string, value: string | boolean | number) {
+  public setValue(name: keyof T, value: string | boolean | number) {
     const values = this.value;
-    values[name] = value;
+    values[name as string] = value;
     this.value = values;
     return values;
   }

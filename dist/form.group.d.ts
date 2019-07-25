@@ -39,7 +39,7 @@ export declare class FormGroup<T = FormInputOptions, E = {
     value: T;
     unsubscribe(): void;
     getValue(name: keyof T): T[keyof T];
-    setValue(name: string, value: string | boolean | number): T;
+    setValue(name: keyof T, value: string | boolean | number): T;
     setFormValue(value: T): void;
     setFormElement(form: HTMLFormElement): this;
     setInputs(inputs: HTMLInputElement[]): void;
