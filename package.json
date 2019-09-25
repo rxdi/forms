@@ -9,7 +9,7 @@
     "url": "https://github.com/rxdi/forms"
   },
   "devDependencies": {
-    "@rxdi/lit-html": "^0.7.13",
+    "@rxdi/lit-html": "^0.7.19",
     "@types/node": "^12.0.10",
     "fastrx": "^1.0.9",
     "rxjs": "^6.5.2",
