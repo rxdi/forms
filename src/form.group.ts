@@ -194,9 +194,13 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
   }
 
   public isInputPresentOnStage(input: HTMLInputElement) {
+    if (input.outerHTML === '<input type="submit" style="display: none;">') {
+      return;
+    }
     const isInputPresent = Object.keys(this.value).filter(
       v => v === input.name
     );
+
     if (!isInputPresent.length) {
       throw new Error(
         `Missing input element with name ${input.name} for form ${
