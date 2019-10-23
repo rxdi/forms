@@ -2,7 +2,8 @@ import {
   FormInputOptions,
   FormOptions,
   ErrorObject,
-  InputValidityState
+  InputValidityState,
+  AbstractInput
 } from './form.tokens';
 import { LitElement } from '@rxdi/lit-html';
 import { BehaviorSubject } from './rx-fake';
@@ -16,7 +17,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
   private readonly _valueChanges: BehaviorSubject<T>;
   private form: HTMLFormElement;
   private errorMap = new Map();
-  private inputs: Map<keyof T, HTMLInputElement> = new Map();
+  private inputs: Map<keyof T, AbstractInput> = new Map();
   private options: FormOptions = {} as FormOptions;
   private parentElement: LitElement;
 
@@ -95,8 +96,8 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
   private updateValueAndValidityOnEvent(method: Function) {
     const self = this;
     return function(
-      this: HTMLInputElement,
-      event: { target: HTMLInputElement }
+      this: AbstractInput,
+      event: { target: AbstractInput }
     ) {
       self.setElementDirty(this);
       const hasMultipleBindings = [
@@ -119,7 +120,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
         [
           ...((<never>(
             self.getFormElement().querySelectorAll('input:checked')
-          )) as Map<string, HTMLInputElement>).values()
+          )) as Map<string, AbstractInput>).values()
         ].forEach(el => (el.checked = false));
         this.checked = true;
       }
@@ -178,7 +179,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     return [
       ...((<never>this.form.querySelectorAll('input')) as Map<
         string,
-        HTMLInputElement
+        AbstractInput
       >).values()
     ]
       .filter(el => this.isInputPresentOnStage(el))
@@ -186,7 +187,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
   }
 
   public mapEventToInputs(inputs: HTMLElement[] = []) {
-    return inputs.map((el: HTMLInputElement) => {
+    return inputs.map((el: AbstractInput) => {
       const strategy = `on${this.options.strategy}`;
       if (!el[strategy]) {
         el[strategy] = function() {};
@@ -210,18 +211,18 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     });
   }
 
-  setElementValidity(el: HTMLInputElement, validity?: boolean) {
+  setElementValidity(el: AbstractInput, validity?: boolean) {
     const isValid = validity || this.applyValidationContext(this.validate(el));
     el['valid'] = isValid;
     el['invalid'] = !isValid;
   }
 
-  setElementDirty(input: HTMLInputElement) {
+  setElementDirty(input: AbstractInput) {
     input['touched'] = true;
     input['dirty'] = true;
   }
 
-  public isInputPresentOnStage(input: HTMLInputElement) {
+  public isInputPresentOnStage(input: AbstractInput) {
     if (input.outerHTML === '<input type="submit" style="display: none;">') {
       return;
     }
@@ -239,7 +240,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     return isInputPresent.length;
   }
 
-  public validate(element: HTMLInputElement): ErrorObject {
+  public validate(element: AbstractInput): ErrorObject {
     let errors = [];
 
     element.setCustomValidity('');
@@ -267,7 +268,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     return { element, errors };
   }
 
-  private mapInputErrors(element: HTMLInputElement) {
+  private mapInputErrors(element: AbstractInput) {
     return (this.validators.get(element.name) || [])
       .map(v => {
         this.errors[element.name] = this.errors[element.name] || {};
@@ -348,8 +349,8 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     return this;
   }
 
-  public setInputs(inputs: HTMLInputElement[]) {
-    this.inputs = new Map<keyof T, HTMLInputElement>(
+  public setInputs(inputs: AbstractInput[]) {
+    this.inputs = new Map<keyof T, AbstractInput>(
       inputs.map(e => [e.name as keyof T, e])
     );
   }

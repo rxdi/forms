@@ -1,4 +1,4 @@
-import { FormInputOptions, FormOptions, ErrorObject } from './form.tokens';
+import { FormInputOptions, FormOptions, ErrorObject, AbstractInput } from './form.tokens';
 import { LitElement } from '@rxdi/lit-html';
 export declare class FormGroup<T = FormInputOptions, E = {
     [key: string]: never;
@@ -25,14 +25,14 @@ export declare class FormGroup<T = FormInputOptions, E = {
     private updateValueAndValidityOnEvent;
     applyValidationContext({ errors, element }: ErrorObject): boolean;
     querySelectForm(shadowRoot: HTMLElement | ShadowRoot): HTMLFormElement;
-    querySelectorAllInputs(): HTMLInputElement[];
-    mapEventToInputs(inputs?: HTMLElement[]): HTMLInputElement[];
-    setElementValidity(el: HTMLInputElement, validity?: boolean): void;
-    setElementDirty(input: HTMLInputElement): void;
-    isInputPresentOnStage(input: HTMLInputElement): number;
-    validate(element: HTMLInputElement): ErrorObject;
+    querySelectorAllInputs(): AbstractInput[];
+    mapEventToInputs(inputs?: HTMLElement[]): AbstractInput[];
+    setElementValidity(el: AbstractInput, validity?: boolean): void;
+    setElementDirty(input: AbstractInput): void;
+    isInputPresentOnStage(input: AbstractInput): number;
+    validate(element: AbstractInput): ErrorObject;
     private mapInputErrors;
-    get(name: keyof T): HTMLInputElement;
+    get(name: keyof T): AbstractInput;
     getError(inputName: keyof T, errorKey: keyof E): never;
     hasError(inputName: keyof T, errorKey: keyof E): boolean;
     reset(): void;
@@ -44,6 +44,6 @@ export declare class FormGroup<T = FormInputOptions, E = {
     setValue(name: keyof T, value: string | boolean | number): T;
     setFormValue(value: T): void;
     setFormElement(form: HTMLFormElement): this;
-    setInputs(inputs: HTMLInputElement[]): void;
+    setInputs(inputs: AbstractInput[]): void;
     getFormElement(): HTMLFormElement;
 }
