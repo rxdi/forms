@@ -85,6 +85,8 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     const inputs = this.querySelectorAllInputs()
       .map(i => {
         i.setCustomValidity('');
+        this.setElementValidity(i);
+        this.setElementDirty(i);
         return i;
       })
       .map(input => this.validate(input))
