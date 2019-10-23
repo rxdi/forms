@@ -25,6 +25,7 @@ export declare class FormGroup<T = FormInputOptions, E = {
     private updateValueAndValidityOnEvent;
     applyValidationContext({ errors, element }: ErrorObject): boolean;
     querySelectForm(shadowRoot: HTMLElement | ShadowRoot): HTMLFormElement;
+    private querySelectAll;
     querySelectorAllInputs(): AbstractInput[];
     mapEventToInputs(inputs?: HTMLElement[]): AbstractInput[];
     setElementValidity(el: AbstractInput, validity?: boolean): void;

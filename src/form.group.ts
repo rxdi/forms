@@ -177,12 +177,16 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
     return form;
   }
 
+  private querySelectAll(name: string) {
+    return [...((<never>this.form.querySelectorAll(name)) as Map<
+    string,
+    AbstractInput
+  >).values()]
+  }
   public querySelectorAllInputs() {
     return [
-      ...((<never>this.form.querySelectorAll('input')) as Map<
-        string,
-        AbstractInput
-      >).values()
+      ...this.querySelectAll('input'),
+      ...this.querySelectAll('select'),
     ]
       .filter(el => this.isInputPresentOnStage(el))
       .filter(el => !!el.name);

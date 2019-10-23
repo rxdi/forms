@@ -131,9 +131,13 @@ class FormGroup {
         });
         return form;
     }
+    querySelectAll(name) {
+        return [...this.form.querySelectorAll(name).values()];
+    }
     querySelectorAllInputs() {
         return [
-            ...this.form.querySelectorAll('input').values()
+            ...this.querySelectAll('input'),
+            ...this.querySelectAll('select'),
         ]
             .filter(el => this.isInputPresentOnStage(el))
             .filter(el => !!el.name);
