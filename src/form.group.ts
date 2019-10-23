@@ -98,6 +98,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
       this: HTMLInputElement,
       event: { target: HTMLInputElement }
     ) {
+      self.setElementDirty(this);
       const hasMultipleBindings = [
         ...((self
           .getFormElement()
@@ -126,10 +127,18 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
       const isValid = self.applyValidationContext(self.validate(this));
       if (self.options.strict) {
         if (isValid) {
+          this['valid'] = true;
           self.setValue(this.name as keyof T, value);
         }
         self.parentElement.requestUpdate();
         return method.call(self.parentElement, event);
+      }
+      if (isValid) {
+        this['valid'] = true;
+        this['invalid'] = false;
+      } else {
+        this['invalid'] = true;
+        this['valid'] = false;
       }
       self.setValue(this.name as keyof T, value);
       self.parentElement.requestUpdate();
@@ -188,9 +197,27 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
       if (!el[strategy]) {
         el[strategy] = function() {};
       }
+      const customAttributes = Object.keys(el.attributes)
+        .map(k =>
+          el.attributes[k].name.startsWith('#') ? el.attributes[k] : null
+        )
+        .filter(i => !!i);
+      if (customAttributes.length) {
+        const attr = customAttributes.find(a => a.name.startsWith('#'))
+        this.parentElement[attr.name.replace('#', '')] = el
+      }
+      el.addEventListener('blur', () => {
+        this.setElementDirty(el);
+        this.parentElement.requestUpdate();
+      })
       el[strategy] = this.updateValueAndValidityOnEvent(el[strategy]);
       return el;
     });
+  }
+
+  setElementDirty(input: HTMLInputElement) {
+    input['touched'] = true;
+    input['dirty'] = true;
   }
 
   public isInputPresentOnStage(input: HTMLInputElement) {
@@ -213,6 +240,7 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
 
   public validate(element: HTMLInputElement): ErrorObject {
     let errors = [];
+
     element.setCustomValidity('');
     if (!element.checkValidity()) {
       return {

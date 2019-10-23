@@ -71,6 +71,7 @@ class FormGroup {
     updateValueAndValidityOnEvent(method) {
         const self = this;
         return function (event) {
+            self.setElementDirty(this);
             const hasMultipleBindings = [
                 ...self
                     .getFormElement()
@@ -91,10 +92,19 @@ class FormGroup {
             const isValid = self.applyValidationContext(self.validate(this));
             if (self.options.strict) {
                 if (isValid) {
+                    this['valid'] = true;
                     self.setValue(this.name, value);
                 }
                 self.parentElement.requestUpdate();
                 return method.call(self.parentElement, event);
+            }
+            if (isValid) {
+                this['valid'] = true;
+                this['invalid'] = false;
+            }
+            else {
+                this['invalid'] = true;
+                this['valid'] = false;
             }
             self.setValue(this.name, value);
             self.parentElement.requestUpdate();
@@ -139,11 +149,29 @@ class FormGroup {
             if (!el[strategy]) {
                 el[strategy] = function () { };
             }
+            const customAttributes = Object.keys(el.attributes)
+                .map(k => el.attributes[k].name.startsWith('#') ? el.attributes[k] : null)
+                .filter(i => !!i);
+            if (customAttributes.length) {
+                const attr = customAttributes.find(a => a.name.startsWith('#'));
+                this.parentElement[attr.name.replace('#', '')] = el;
+            }
+            el.addEventListener('blur', () => {
+                this.setElementDirty(el);
+                this.parentElement.requestUpdate();
+            });
             el[strategy] = this.updateValueAndValidityOnEvent(el[strategy]);
             return el;
         });
     }
+    setElementDirty(input) {
+        input['touched'] = true;
+        input['dirty'] = true;
+    }
     isInputPresentOnStage(input) {
+        if (input.outerHTML === '<input type="submit" style="display: none;">') {
+            return;
+        }
         const isInputPresent = Object.keys(this.value).filter(v => v === input.name);
         if (!isInputPresent.length) {
             throw new Error(`Missing input element with name ${input.name} for form ${this.getFormElement().name}`);
