@@ -10,17 +10,27 @@ export interface FormInputOptions {
   [key: string]: [string, Function[]];
 }
 
-export interface InputErrorMessage<T = any> { key: T; message: string }
+export interface InputErrorMessage<T = any> {
+  key: T;
+  message: string;
+}
 
 export interface ErrorObject {
   element: HTMLInputElement;
   errors: InputErrorMessage[];
 }
 
-function strEnum<T extends string>(o: Array<T>): {[K in T]: K} {
+export interface AbstractInput extends HTMLInputElement {
+  valid?: boolean;
+  invalid?: boolean;
+  dirty?: boolean;
+  touched?: boolean;
+}
+
+function strEnum<T extends string>(o: Array<T>): { [K in T]: K } {
   return o.reduce((res, key) => {
-      res[key] = key;
-      return res;
+    res[key] = key;
+    return res;
   }, Object.create(null));
 }
 
@@ -35,6 +45,6 @@ export const InputValidityState = strEnum([
   'tooShort',
   'typeMismatch',
   'valid',
-  'valueMissing',
+  'valueMissing'
 ]);
 export type InputValidityState = keyof typeof InputValidityState;

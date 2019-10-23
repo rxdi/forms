@@ -127,19 +127,13 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
       const isValid = self.applyValidationContext(self.validate(this));
       if (self.options.strict) {
         if (isValid) {
-          this['valid'] = true;
+          self.setElementValidity(this, isValid);
           self.setValue(this.name as keyof T, value);
         }
         self.parentElement.requestUpdate();
         return method.call(self.parentElement, event);
       }
-      if (isValid) {
-        this['valid'] = true;
-        this['invalid'] = false;
-      } else {
-        this['invalid'] = true;
-        this['valid'] = false;
-      }
+      self.setElementValidity(this, isValid);
       self.setValue(this.name as keyof T, value);
       self.parentElement.requestUpdate();
       return method.call(self.parentElement, event);
@@ -203,16 +197,23 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
         )
         .filter(i => !!i);
       if (customAttributes.length) {
-        const attr = customAttributes.find(a => a.name.startsWith('#'))
-        this.parentElement[attr.name.replace('#', '')] = el
+        const attr = customAttributes.find(a => a.name.startsWith('#'));
+        this.parentElement[attr.name.replace('#', '')] = el;
       }
       el.addEventListener('blur', () => {
         this.setElementDirty(el);
         this.parentElement.requestUpdate();
-      })
+        this.setElementValidity(el);
+      });
       el[strategy] = this.updateValueAndValidityOnEvent(el[strategy]);
       return el;
     });
+  }
+
+  setElementValidity(el: HTMLInputElement, validity?: boolean) {
+    const isValid = validity || this.applyValidationContext(this.validate(el));
+    el['valid'] = isValid;
+    el['invalid'] = !isValid;
   }
 
   setElementDirty(input: HTMLInputElement) {

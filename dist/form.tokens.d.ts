@@ -16,6 +16,12 @@ export interface ErrorObject {
     element: HTMLInputElement;
     errors: InputErrorMessage[];
 }
+export interface AbstractInput extends HTMLInputElement {
+    valid?: boolean;
+    invalid?: boolean;
+    dirty?: boolean;
+    touched?: boolean;
+}
 export declare const InputValidityState: {
     badInput: "badInput";
     customError: "customError";

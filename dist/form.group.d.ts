@@ -27,6 +27,7 @@ export declare class FormGroup<T = FormInputOptions, E = {
     querySelectForm(shadowRoot: HTMLElement | ShadowRoot): HTMLFormElement;
     querySelectorAllInputs(): HTMLInputElement[];
     mapEventToInputs(inputs?: HTMLElement[]): HTMLInputElement[];
+    setElementValidity(el: HTMLInputElement, validity?: boolean): void;
     setElementDirty(input: HTMLInputElement): void;
     isInputPresentOnStage(input: HTMLInputElement): number;
     validate(element: HTMLInputElement): ErrorObject;

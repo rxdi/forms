@@ -92,20 +92,13 @@ class FormGroup {
             const isValid = self.applyValidationContext(self.validate(this));
             if (self.options.strict) {
                 if (isValid) {
-                    this['valid'] = true;
+                    self.setElementValidity(this, isValid);
                     self.setValue(this.name, value);
                 }
                 self.parentElement.requestUpdate();
                 return method.call(self.parentElement, event);
             }
-            if (isValid) {
-                this['valid'] = true;
-                this['invalid'] = false;
-            }
-            else {
-                this['invalid'] = true;
-                this['valid'] = false;
-            }
+            self.setElementValidity(this, isValid);
             self.setValue(this.name, value);
             self.parentElement.requestUpdate();
             return method.call(self.parentElement, event);
@@ -159,10 +152,16 @@ class FormGroup {
             el.addEventListener('blur', () => {
                 this.setElementDirty(el);
                 this.parentElement.requestUpdate();
+                this.setElementValidity(el);
             });
             el[strategy] = this.updateValueAndValidityOnEvent(el[strategy]);
             return el;
         });
+    }
+    setElementValidity(el, validity) {
+        const isValid = validity || this.applyValidationContext(this.validate(el));
+        el['valid'] = isValid;
+        el['invalid'] = !isValid;
     }
     setElementDirty(input) {
         input['touched'] = true;

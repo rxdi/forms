@@ -86,16 +86,13 @@ function BehaviorSubject(init) {
     return new b(init);
 }
 exports.BehaviorSubject = BehaviorSubject;
-;
 function Observable(fn) {
     const o = observableOrFake();
     return new o(fn);
 }
 exports.Observable = Observable;
-;
 function Subscription() {
     const s = subscriptionOrFake();
     return new s();
 }
 exports.Subscription = Subscription;
-;

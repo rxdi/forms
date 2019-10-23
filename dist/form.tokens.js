@@ -17,5 +17,5 @@ exports.InputValidityState = strEnum([
     'tooShort',
     'typeMismatch',
     'valid',
-    'valueMissing',
+    'valueMissing'
 ]);

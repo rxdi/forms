@@ -1,9 +1,8 @@
-
-
-
-
-
-import { BehaviorSubject as BS, Observable as O, Subscription as S } from 'rxjs';
+import {
+  BehaviorSubject as BS,
+  Observable as O,
+  Subscription as S
+} from 'rxjs';
 
 type OBS<T> = (o: $Observable<T>) => void | Function;
 type FN<T> = (a: T) => void;
@@ -75,42 +74,42 @@ export class $BehaviorSubject<T> extends $Observable<T> {
 }
 
 function behaviorOrFake<T>(): void {
-    try {
-        return require('rxjs').BehaviorSubject;
-    } catch (e) {}
-    return $BehaviorSubject as any;
+  try {
+    return require('rxjs').BehaviorSubject;
+  } catch (e) {}
+  return $BehaviorSubject as any;
 }
 
 function observableOrFake<T>(): void {
-    try {
-        return require('rxjs').Observable;
-    } catch (e) {}
-    return $Observable as any;
+  try {
+    return require('rxjs').Observable;
+  } catch (e) {}
+  return $Observable as any;
 }
 
 function subscriptionOrFake<T>(): void {
-    try {
-        return require('rxjs').Subscription;
-    } catch (e) {}
-    return $Subscription as any;
+  try {
+    return require('rxjs').Subscription;
+  } catch (e) {}
+  return $Subscription as any;
 }
 
 export function noop() {}
 
 export function BehaviorSubject<T>(init: T): void {
-    const b: any = behaviorOrFake();
-    return new b(init);
-};
+  const b: any = behaviorOrFake();
+  return new b(init);
+}
 
 export function Observable<T>(fn?: OBS<T>): void {
-    const o: any = observableOrFake();
-    return new o(fn);
-};
+  const o: any = observableOrFake();
+  return new o(fn);
+}
 
 export function Subscription<T>(): void {
-    const s: any = subscriptionOrFake();
-    return new s();
-};
+  const s: any = subscriptionOrFake();
+  return new s();
+}
 
 export interface BehaviorSubject<T> extends BS<T> {}
 export interface Observable<T> extends O<T> {}
