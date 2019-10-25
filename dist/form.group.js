@@ -74,10 +74,11 @@ class FormGroup {
         const self = this;
         return function (event) {
             self.setElementDirty(this);
+            const selector = `input[name="${this.name}"]`;
             const hasMultipleBindings = [
                 ...self
                     .getFormElement()
-                    .querySelectorAll(`input[name="${this.name}"]`).values()
+                    .querySelectorAll(selector).values()
             ].length;
             let value = this.value;
             if (hasMultipleBindings === 1 &&
@@ -90,12 +91,14 @@ class FormGroup {
             const inputsWithBindings = [
                 ...(self.getFormElement().querySelectorAll(`input[name="${this.name}"]:checked`)).values()
             ];
-            if (!self.options.multi && hasMultipleBindings > 1) {
-                value = inputsWithBindings.map(e => e.value);
-            }
-            if (self.options.multi && hasMultipleBindings > 1) {
-                inputsWithBindings.forEach(el => (el.checked = false));
-                this.checked = true;
+            if (hasMultipleBindings > 1) {
+                if (!self.options.multi && this.type === 'checkbox') {
+                    value = inputsWithBindings.map(e => e.value);
+                }
+                if (self.options.multi) {
+                    inputsWithBindings.forEach(el => (el.checked = false));
+                    this.checked = true;
+                }
             }
             self.resetErrors();
             const isValid = self.applyValidationContext(self.validate(this));

@@ -128,14 +128,17 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
         )) as Map<string, AbstractInput>).values()
       ];
 
-      if (!self.options.multi && hasMultipleBindings > 1) {
-        value = inputsWithBindings.map(e => e.value);
+      if (hasMultipleBindings > 1) {
+        if (!self.options.multi && this.type === 'checkbox') {
+          value = inputsWithBindings.map(e => e.value);
+        }
+  
+        if (self.options.multi) {
+          inputsWithBindings.forEach(el => (el.checked = false));
+          this.checked = true;
+        }
       }
 
-      if (self.options.multi && hasMultipleBindings > 1) {
-        inputsWithBindings.forEach(el => (el.checked = false));
-        this.checked = true;
-      }
       self.resetErrors();
       const isValid = self.applyValidationContext(self.validate(this));
       if (self.options.strict) {
