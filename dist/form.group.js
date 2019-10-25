@@ -84,6 +84,9 @@ class FormGroup {
                 (this.type === 'checkbox' || this.type === 'radio')) {
                 value = String(this.checked);
             }
+            if (this.type === 'number') {
+                value = Number(value);
+            }
             if (self.options.multi && hasMultipleBindings > 1) {
                 [
                     ...(self.getFormElement().querySelectorAll('input:checked')).values()

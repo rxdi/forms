@@ -110,12 +110,16 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
           NodeListOf<Element>
         >).values()
       ].length;
-      let value = this.value;
+      let value = this.value as any;
       if (
         hasMultipleBindings === 1 &&
         (this.type === 'checkbox' || this.type === 'radio')
       ) {
         value = String(this.checked);
+      }
+
+      if (this.type === 'number') {
+        value = Number(value);
       }
 
       if (self.options.multi && hasMultipleBindings > 1) {
