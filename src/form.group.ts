@@ -102,10 +102,11 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
       event: { target: AbstractInput }
     ) {
       self.setElementDirty(this);
+      const selector = `input[name="${this.name}"]`;
       const hasMultipleBindings = [
         ...((self
           .getFormElement()
-          .querySelectorAll(`input[name="${this.name}"]`) as any) as Map<
+          .querySelectorAll(selector) as any) as Map<
           string,
           NodeListOf<Element>
         >).values()
@@ -121,13 +122,18 @@ export class FormGroup<T = FormInputOptions, E = { [key: string]: never }> {
       if (this.type === 'number') {
         value = Number(value);
       }
+      const inputsWithBindings = [
+        ...((<never>(
+          self.getFormElement().querySelectorAll(`input[name="${this.name}"]:checked`)
+        )) as Map<string, AbstractInput>).values()
+      ];
+
+      if (!self.options.multi && hasMultipleBindings > 1) {
+        value = inputsWithBindings.map(e => e.value);
+      }
 
       if (self.options.multi && hasMultipleBindings > 1) {
-        [
-          ...((<never>(
-            self.getFormElement().querySelectorAll('input:checked')
-          )) as Map<string, AbstractInput>).values()
-        ].forEach(el => (el.checked = false));
+        inputsWithBindings.forEach(el => (el.checked = false));
         this.checked = true;
       }
       self.resetErrors();

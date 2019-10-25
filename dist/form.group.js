@@ -87,10 +87,14 @@ class FormGroup {
             if (this.type === 'number') {
                 value = Number(value);
             }
+            const inputsWithBindings = [
+                ...(self.getFormElement().querySelectorAll(`input[name="${this.name}"]:checked`)).values()
+            ];
+            if (!self.options.multi && hasMultipleBindings > 1) {
+                value = inputsWithBindings.map(e => e.value);
+            }
             if (self.options.multi && hasMultipleBindings > 1) {
-                [
-                    ...(self.getFormElement().querySelectorAll('input:checked')).values()
-                ].forEach(el => (el.checked = false));
+                inputsWithBindings.forEach(el => (el.checked = false));
                 this.checked = true;
             }
             self.resetErrors();
