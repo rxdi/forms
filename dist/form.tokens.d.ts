@@ -1,8 +1,13 @@
 export declare type FormStrategies = keyof WindowEventMap;
 export interface FormOptions {
+    /** Name of the form element */
     name: string;
+    /** Event type on which form will be triggered 'blur', 'change'*/
     strategy?: FormStrategies;
+    /** Multiple input elements like checkboxes with the same name will be binded together */
     multi?: boolean;
+    /** When set to true `.valueChanges` will emit values only
+     * if current input validation passes, default behavior is to emit every change fro */
     strict?: boolean;
 }
 export interface FormInputOptions {
